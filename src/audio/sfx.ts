@@ -12,6 +12,9 @@ export class Sfx {
 
   unlock(): void {
     if (typeof window === 'undefined') return;
+    // iOS mutes Web Audio under the silent switch unless the session is marked as playback (Safari 16.4+).
+    const nav = navigator as Navigator & { audioSession?: { type: string } };
+    if (nav.audioSession && nav.audioSession.type !== 'playback') nav.audioSession.type = 'playback';
     if (!this.ctx) {
       const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!AC) return;
@@ -28,13 +31,14 @@ export class Sfx {
       const d = this.noiseBuf.getChannelData(0);
       for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
       window.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible' && this.ctx?.state === 'suspended') {
+        if (document.visibilityState === 'visible' && this.ctx && this.ctx.state !== 'running') {
           void this.ctx.resume();
           this.primed = false;
         }
       });
     }
-    if (this.ctx.state === 'suspended') {
+    // 'interrupted' (iOS, after a call or app switch) needs a resume too, not just 'suspended'.
+    if (this.ctx.state !== 'running') {
       void this.ctx.resume();
       this.primed = false;
     }

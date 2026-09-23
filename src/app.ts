@@ -50,7 +50,10 @@ export class App {
       if (e.code === 'KeyM' && !e.metaKey && !e.ctrlKey) this.sfx.toggleMute();
       this.sfx.unlock();
     });
-    window.addEventListener('pointerdown', () => this.sfx.unlock());
+    // A touch pointerdown is not a user activation; audio can only start on the release/click.
+    for (const ev of ['pointerdown', 'pointerup', 'touchend', 'click'] as const) {
+      window.addEventListener(ev, () => this.sfx.unlock(), { capture: true, passive: true });
+    }
     const saved = loadSettings();
     this.showFps = saved.showFps;
     this.devices.touch.setLayout(saved.touchLayout);
