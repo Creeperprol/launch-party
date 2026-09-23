@@ -1,3 +1,4 @@
+import { VIEW_H, VIEW_W } from '../render/camera';
 import { clamp } from '../sim/math';
 import { neutralInput, type InputFrame } from '../sim/input';
 
@@ -12,6 +13,26 @@ interface Circle {
   r: number;
 }
 
+/** Saved/restorable screen positions for every touch element. */
+export interface TouchLayout {
+  stick: { x: number; y: number };
+  buttons: Record<TouchBtn, { x: number; y: number }>;
+  pause: { x: number; y: number };
+}
+
+const DEFAULT_LAYOUT: TouchLayout = {
+  stick: { x: 190, y: 780 },
+  buttons: {
+    jump: { x: 1590, y: 700 },
+    special: { x: 1710, y: 700 },
+    smash: { x: 1830, y: 700 },
+    shield: { x: 1590, y: 830 },
+    attack: { x: 1710, y: 830 },
+    grab: { x: 1850, y: 830 },
+  },
+  pause: { x: 60, y: 60 },
+};
+
 /** True on phones/tablets and any browser reporting touch support. */
 export function isTouchCapable(): boolean {
   if (typeof window === 'undefined') return false;
@@ -25,18 +46,20 @@ export function isTouchCapable(): boolean {
  */
 export class TouchPad {
   active = false;
+  /** When true, dragging any element repositions it instead of pressing it. */
+  editMode = false;
 
-  readonly stick: Circle = { x: 190, y: 780, r: 100 };
+  readonly stick: Circle = { x: DEFAULT_LAYOUT.stick.x, y: DEFAULT_LAYOUT.stick.y, r: 100 };
   readonly stickTravel = 78;
   readonly buttons: Record<TouchBtn, Circle> = {
-    jump: { x: 1590, y: 700, r: 58 },
-    special: { x: 1710, y: 700, r: 58 },
-    smash: { x: 1830, y: 700, r: 58 },
-    shield: { x: 1590, y: 830, r: 58 },
-    attack: { x: 1710, y: 830, r: 64 },
-    grab: { x: 1850, y: 830, r: 58 },
+    jump: { ...DEFAULT_LAYOUT.buttons.jump, r: 58 },
+    special: { ...DEFAULT_LAYOUT.buttons.special, r: 58 },
+    smash: { ...DEFAULT_LAYOUT.buttons.smash, r: 58 },
+    shield: { ...DEFAULT_LAYOUT.buttons.shield, r: 58 },
+    attack: { ...DEFAULT_LAYOUT.buttons.attack, r: 64 },
+    grab: { ...DEFAULT_LAYOUT.buttons.grab, r: 58 },
   };
-  readonly pause: Circle = { x: 60, y: 60, r: 40 };
+  readonly pause: Circle = { x: DEFAULT_LAYOUT.pause.x, y: DEFAULT_LAYOUT.pause.y, r: 40 };
 
   private toLogical: (cx: number, cy: number) => [number, number] = (x, y) => [x, y];
   private stickPointer: number | null = null;
@@ -49,6 +72,11 @@ export class TouchPad {
   private pausePointer: number | null = null;
   private pauseTapped = false;
   private pauseHeld = false;
+  /** Edit-mode drag: which element + pointer, and the grab offset from its center. */
+  private editPointer: number | null = null;
+  private editTarget: Circle | null = null;
+  private editDX = 0;
+  private editDY = 0;
 
   attach(canvas: HTMLCanvasElement, toLogical: (cx: number, cy: number) => [number, number]): void {
     this.toLogical = toLogical;
@@ -80,9 +108,28 @@ export class TouchPad {
     return Math.hypot(x - c.x, y - c.y);
   }
 
+  /** All draggable circles, nearest-hit first is not required — first match wins. */
+  private allCircles(): Circle[] {
+    return [this.stick, ...BTN_KEYS.map((b) => this.buttons[b]), this.pause];
+  }
+
   private onDown(e: PointerEvent): void {
     if (!this.active) return;
     const [x, y] = this.toLogical(e.clientX, e.clientY);
+    if (this.editMode) {
+      if (this.editPointer !== null) return;
+      for (const c of this.allCircles()) {
+        if (this.dist(x, y, c) <= c.r + 16) {
+          this.editPointer = e.pointerId;
+          this.editTarget = c;
+          this.editDX = c.x - x;
+          this.editDY = c.y - y;
+          e.preventDefault();
+          return;
+        }
+      }
+      return;
+    }
     if (this.stickPointer === null && this.dist(x, y, this.stick) <= this.stick.r + 40) {
       this.stickPointer = e.pointerId;
       this.updateStick(x, y);
@@ -108,6 +155,16 @@ export class TouchPad {
   }
 
   private onMove(e: PointerEvent): void {
+    if (this.editMode) {
+      if (this.editPointer === e.pointerId && this.editTarget) {
+        const [x, y] = this.toLogical(e.clientX, e.clientY);
+        const c = this.editTarget;
+        c.x = clamp(x + this.editDX, c.r, VIEW_W - c.r);
+        c.y = clamp(y + this.editDY, c.r, VIEW_H - c.r);
+        e.preventDefault();
+      }
+      return;
+    }
     if (this.stickPointer === e.pointerId) {
       const [x, y] = this.toLogical(e.clientX, e.clientY);
       this.updateStick(x, y);
@@ -116,6 +173,11 @@ export class TouchPad {
   }
 
   private onUp(e: PointerEvent): void {
+    if (this.editPointer === e.pointerId) {
+      this.editPointer = null;
+      this.editTarget = null;
+      return;
+    }
     if (this.stickPointer === e.pointerId) {
       this.stickPointer = null;
       this.stickX = 0;
@@ -133,6 +195,30 @@ export class TouchPad {
       this.pausePointer = null;
       this.pauseHeld = false;
     }
+  }
+
+  getLayout(): TouchLayout {
+    return {
+      stick: { x: this.stick.x, y: this.stick.y },
+      buttons: Object.fromEntries(BTN_KEYS.map((b) => [b, { x: this.buttons[b].x, y: this.buttons[b].y }])) as Record<TouchBtn, { x: number; y: number }>,
+      pause: { x: this.pause.x, y: this.pause.y },
+    };
+  }
+
+  setLayout(l: TouchLayout | null): void {
+    const layout = l ?? DEFAULT_LAYOUT;
+    this.stick.x = layout.stick.x;
+    this.stick.y = layout.stick.y;
+    for (const b of BTN_KEYS) {
+      this.buttons[b].x = layout.buttons[b].x;
+      this.buttons[b].y = layout.buttons[b].y;
+    }
+    this.pause.x = layout.pause.x;
+    this.pause.y = layout.pause.y;
+  }
+
+  resetLayout(): void {
+    this.setLayout(null);
   }
 
   private updateStick(x: number, y: number): void {
@@ -165,7 +251,7 @@ export class TouchPad {
   }
 
   frame(): InputFrame {
-    if (!this.active) return neutralInput();
+    if (!this.active || this.editMode) return neutralInput();
     return {
       x: this.stickX, y: this.stickY, cx: 0, cy: 0,
       jump: this.held.jump, attack: this.held.attack, special: this.held.special,
@@ -177,16 +263,21 @@ export class TouchPad {
   draw(ctx: CanvasRenderingContext2D): void {
     if (!this.active) return;
     ctx.save();
+    if (this.editMode) {
+      ctx.setLineDash([10, 8]);
+      ctx.shadowColor = 'rgba(255,224,102,0.8)';
+      ctx.shadowBlur = 14;
+    }
     // joystick
     ctx.fillStyle = 'rgba(20,16,40,0.38)';
-    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.strokeStyle = this.editTarget === this.stick ? '#ffe066' : 'rgba(255,255,255,0.55)';
     ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.arc(this.stick.x, this.stick.y, this.stick.r, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-    const active = this.stickPointer !== null;
-    ctx.fillStyle = active ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.5)';
+    const stickActive = this.stickPointer !== null;
+    ctx.fillStyle = stickActive ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.5)';
     ctx.beginPath();
     ctx.arc(this.stick.x + this.drawX, this.stick.y + this.drawY, 42, 0, Math.PI * 2);
     ctx.fill();
@@ -200,8 +291,9 @@ export class TouchPad {
     for (const b of BTN_KEYS) {
       const c = this.buttons[b];
       const pressed = this.held[b];
+      const dragging = this.editTarget === c;
       ctx.fillStyle = pressed ? 'rgba(255,224,102,0.85)' : 'rgba(20,16,40,0.42)';
-      ctx.strokeStyle = pressed ? 'rgba(20,16,40,0.9)' : 'rgba(255,255,255,0.55)';
+      ctx.strokeStyle = dragging ? '#ffe066' : pressed ? 'rgba(20,16,40,0.9)' : 'rgba(255,255,255,0.55)';
       ctx.lineWidth = 4;
       ctx.beginPath();
       ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
@@ -212,7 +304,7 @@ export class TouchPad {
     }
     // pause
     ctx.fillStyle = this.pauseHeld ? 'rgba(255,224,102,0.85)' : 'rgba(20,16,40,0.5)';
-    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.strokeStyle = this.editTarget === this.pause ? '#ffe066' : 'rgba(255,255,255,0.6)';
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(this.pause.x, this.pause.y, this.pause.r, 0, Math.PI * 2);

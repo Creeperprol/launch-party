@@ -17,11 +17,10 @@ export interface SlotState {
 
 export const STOCK_OPTIONS = [1, 2, 3, 4, 5];
 export const TIME_OPTIONS = [0, 3, 5, 7];
-export const ITEM_LABELS = ['OFF', 'LOW', 'MEDIUM', 'HIGH'];
 
 /** Settings that persist across screens during a session. */
 export class Session {
-  rules: Rules = { stocks: 3, time: 7, items: 2 };
+  rules: Rules = { stocks: 3, time: 7 };
   slots: SlotState[] = [0, 1, 2, 3].map((i) => ({ type: 'off' as SlotType, device: null, fighter: i % FIGHTERS.length, level: 5, ready: false }));
   /** Index into STAGES, or -1 for random. */
   stage = 0;

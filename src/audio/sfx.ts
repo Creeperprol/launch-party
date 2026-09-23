@@ -8,6 +8,7 @@ export class Sfx {
   muted = false;
   private recent = 0;
   private recentAt = 0;
+  private primed = false;
 
   unlock(): void {
     if (typeof window === 'undefined') return;
@@ -26,8 +27,31 @@ export class Sfx {
       this.noiseBuf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
       const d = this.noiseBuf.getChannelData(0);
       for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      window.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && this.ctx?.state === 'suspended') {
+          void this.ctx.resume();
+          this.primed = false;
+        }
+      });
     }
-    if (this.ctx.state === 'suspended') void this.ctx.resume();
+    if (this.ctx.state === 'suspended') {
+      void this.ctx.resume();
+      this.primed = false;
+    }
+    if (this.primed) return;
+    this.primed = true;
+    // Mobile Safari (and some other mobile browsers) only reliably wake up the audio
+    // pipeline if a sound actually plays synchronously inside the unlocking user gesture —
+    // creating the context and calling resume() isn't always enough for sounds scheduled
+    // later from the game loop (which isn't itself a user gesture) to come through.
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    g.gain.value = 0.0001;
+    o.connect(g);
+    g.connect(this.ctx.destination);
+    const t = this.ctx.currentTime;
+    o.start(t);
+    o.stop(t + 0.05);
   }
 
   toggleMute(): void {
@@ -197,9 +221,6 @@ export class Sfx {
       case 'tech':
         if (this.ok()) this.tone(1500, 0.1, 'triangle', 0.1, 2200);
         break;
-      case 'explode':
-        if (this.ok()) this.explode();
-        break;
       case 'shoot':
         if (this.ok()) {
           if (e.kind === 'laser') this.tone(1800, 0.09, 'square', 0.07, 600);
@@ -217,13 +238,6 @@ export class Sfx {
         break;
       case 'grab':
         if (this.ok()) this.noise(0.07, 0.15, 900, 1.5);
-        break;
-      case 'item':
-        if (!this.ok()) break;
-        if (e.action === 'heal') [660, 880, 1100].forEach((f, i) => this.tone(f, 0.12, 'sine', 0.1, undefined, i * 0.06));
-        else if (e.action === 'pickup') this.tone(900, 0.07, 'triangle', 0.1, 1200);
-        else if (e.action === 'throw') this.noise(0.1, 0.12, 1800, 1.2, 'bandpass', 700);
-        else if (e.action === 'spawn') this.tone(1400, 0.2, 'sine', 0.05, 1900);
         break;
       case 'countdown':
         this.countdown(e.n);

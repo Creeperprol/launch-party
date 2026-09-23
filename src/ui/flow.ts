@@ -5,6 +5,7 @@ import { MainMenuScene } from './mainMenu';
 import { MatchScene, type MatchConfig, type MatchResult } from './matchScene';
 import { ResultsScene } from './results';
 import { Session } from './session';
+import { SettingsScene } from './settingsScene';
 import { StageSelectScene } from './stageSelect';
 import { TitleScene } from './title';
 
@@ -29,6 +30,10 @@ export class Flow {
 
   controls(): void {
     this.app.goto(new ControlsScene(this));
+  }
+
+  settings(): void {
+    this.app.goto(new SettingsScene(this));
   }
 
   charSelect(): void {

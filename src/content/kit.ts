@@ -1,6 +1,5 @@
 import type { AnimKey, HitData, MoveDef, Rig } from '../sim/defs';
 import type { Fighter } from '../sim/fighter';
-import type { Match } from '../sim/match';
 import { airBase, standBase } from '../sim/pose';
 
 /** Shared building blocks for fighter content: base-pose keys and universal moves. */
@@ -124,7 +123,7 @@ export function grabMoves(r: Rig, t: ThrowSet): Record<string, MoveDef> {
   return { grab, dashGrab, pummel, fthrow, bthrow, uthrow, dthrow };
 }
 
-/** Rolls, dodges, getups, techs, ledge options, item swings, item throw. */
+/** Rolls, dodges, getups, techs, ledge options. */
 export function commonMoves(r: Rig, W: number, H: number): Record<string, MoveDef> {
   const a = r.arm1 + r.arm2;
   const L = r.leg1 + r.leg2;
@@ -319,99 +318,6 @@ export function commonMoves(r: Rig, W: number, H: number): Record<string, MoveDe
     ],
   };
 
-  // Item throw: direction from the stick when the throw starts.
-  moves.itemThrow = {
-    id: 'itemThrow',
-    total: 22,
-    hitboxes: [],
-    anim: [
-      { f: 3, hF: [-a * 0.4, r.hipH + r.torso * 0.9], lean: -10 },
-      { f: 6, hF: [a * 0.95, r.hipH + r.torso * 0.8], lean: 18 },
-    ],
-    hooks: {
-      start(f: Fighter) {
-        const d = f.stickDir();
-        f.move!.vars.dir = d === 'b' ? 1 : d === 'u' ? 2 : d === 'd' ? 3 : 0;
-      },
-      frame(f: Fighter, m: Match) {
-        if (f.move!.frame === 6) m.throwItem(f, (['f', 'b', 'u', 'd'] as const)[f.move!.vars.dir]);
-      },
-    },
-  };
-
-  // Item swings (the held item becomes the pose weapon).
-  const holdHi: [number, number] = [a * 0.2, r.hipH + r.torso * 0.95];
-  moves.batSwing = {
-    id: 'batSwing',
-    total: 64,
-    charge: { frame: 14, smash: true },
-    hitboxes: [
-      { g: 0, from: 20, to: 23, at: 'blade', t: 1, r: 26, dmg: 26, angle: 38, bkb: 60, kbg: 100, sfx: 'heavy', fx: 'swoosh', hitlag: 1.4 },
-      { g: 0, from: 20, to: 23, at: 'blade', t: 0.55, r: 22, dmg: 26, angle: 38, bkb: 60, kbg: 100, sfx: 'heavy', fx: 'swoosh', hitlag: 1.4 },
-    ],
-    anim: [
-      { f: 10, hF: [-a * 0.5, r.hipH + r.torso * 0.9], hB: [-a * 0.4, r.hipH + r.torso * 0.8], w: 150, lean: -14 },
-      { f: 14, hF: [-a * 0.5, r.hipH + r.torso * 0.9], hB: [-a * 0.4, r.hipH + r.torso * 0.8], w: 150, lean: -14 },
-      { f: 20, hF: [a * 0.85, r.hipH + r.torso * 0.5], hB: [a * 0.7, r.hipH + r.torso * 0.45], w: 0, lean: 22 },
-      { f: 23, hF: [a * 0.7, r.hipH + r.torso * 0.35], w: -40, lean: 24 },
-      { f: 40, hF: [-a * 0.1, r.hipH + r.torso * 0.4], w: -150, lean: 10 },
-    ],
-  };
-  moves.bladeJab = {
-    id: 'bladeJab',
-    total: 22,
-    hitboxes: [
-      { g: 0, from: 5, to: 7, at: 'blade', t: 1, r: 18, dmg: 6, angle: 45, bkb: 30, kbg: 60, sfx: 'slash', fx: 'swoosh' },
-      { g: 0, from: 5, to: 7, at: 'blade', t: 0.5, r: 16, dmg: 6, angle: 45, bkb: 30, kbg: 60, sfx: 'slash', fx: 'swoosh' },
-    ],
-    anim: [
-      { f: 3, hF: holdHi, w: 120, lean: -4 },
-      { f: 5, hF: [a * 0.8, r.hipH + r.torso * 0.5], w: 10, lean: 14 },
-      { f: 8, hF: [a * 0.7, r.hipH + r.torso * 0.3], w: -50, lean: 14 },
-    ],
-  };
-  moves.bladeTilt = {
-    id: 'bladeTilt',
-    total: 32,
-    hitboxes: [
-      { g: 0, from: 8, to: 11, at: 'blade', t: 1, r: 20, dmg: 12, angle: 40, bkb: 35, kbg: 90, sfx: 'slash', fx: 'swoosh' },
-      { g: 0, from: 8, to: 11, at: 'blade', t: 0.5, r: 18, dmg: 12, angle: 40, bkb: 35, kbg: 90, sfx: 'slash', fx: 'swoosh' },
-    ],
-    anim: [
-      { f: 5, hF: holdHi, w: 140, lean: -10 },
-      { f: 8, hF: [a * 0.85, r.hipH + r.torso * 0.6], w: 20, lean: 18 },
-      { f: 11, hF: [a * 0.75, r.hipH + r.torso * 0.3], w: -60, lean: 20 },
-    ],
-  };
-  moves.bladeDash = {
-    id: 'bladeDash',
-    total: 38,
-    motion: [{ from: 1, to: 14, vx: 8 }, { from: 15, to: 30, damp: 0.86 }],
-    hitboxes: [
-      { g: 0, from: 8, to: 13, at: 'blade', t: 1, r: 20, dmg: 12, angle: 45, bkb: 45, kbg: 75, sfx: 'slash', fx: 'swoosh' },
-      { g: 0, from: 8, to: 13, at: 'blade', t: 0.5, r: 18, dmg: 12, angle: 45, bkb: 45, kbg: 75, sfx: 'slash', fx: 'swoosh' },
-    ],
-    anim: [
-      { f: 5, hF: [a * 0.3, r.hipH + r.torso * 0.3], w: -80, lean: 20 },
-      { f: 8, hF: [a * 0.9, r.hipH + r.torso * 0.6], w: 10, lean: 26 },
-      { f: 13, hF: [a * 0.6, r.hipH + r.torso * 0.95], w: 80, lean: 14 },
-    ],
-  };
-  moves.bladeSmash = {
-    id: 'bladeSmash',
-    total: 54,
-    charge: { frame: 10, smash: true },
-    hitboxes: [
-      { g: 0, from: 16, to: 19, at: 'blade', t: 1, r: 22, dmg: 20, angle: 40, bkb: 40, kbg: 95, sfx: 'slash', fx: 'swoosh', hitlag: 1.2 },
-      { g: 0, from: 16, to: 19, at: 'blade', t: 0.5, r: 20, dmg: 20, angle: 40, bkb: 40, kbg: 95, sfx: 'slash', fx: 'swoosh', hitlag: 1.2 },
-    ],
-    anim: [
-      { f: 6, hF: [-a * 0.3, r.hipH + r.torso + a * 0.4], w: 135, lean: -16 },
-      { f: 10, hF: [-a * 0.3, r.hipH + r.torso + a * 0.4], w: 135, lean: -16 },
-      { f: 16, hF: [a * 0.9, r.hipH + r.torso * 0.6], w: 5, lean: 24 },
-      { f: 19, hF: [a * 0.8, r.hipH + r.torso * 0.3], w: -55, lean: 26 },
-    ],
-  };
   void H;
   return moves;
 }

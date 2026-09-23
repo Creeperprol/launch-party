@@ -6,10 +6,6 @@ import type { FighterDef, HitboxDef, HitData, ProjectileSpawn, StageDef } from '
 import type { SimEvent } from './events';
 import { Fighter, type HitboxInst, type MoveInst } from './fighter';
 import { NEUTRAL, type InputFrame } from './input';
-import {
-  BOMB_FUSE, BOMB_HIT, BOMB_RADIUS, FRUIT_HEAL, ITEM_RADIUS, MAX_ITEMS, SPAWN_INTERVAL, THROWN_HIT,
-  type Explosion, type Item, type ItemKind,
-} from './items';
 import { hitlagFrames, knockback } from './knockback';
 import { DEG, clamp, lerp, pointSegDist2, segSegDist2 } from './math';
 import { fighterPhysics } from './physics';
@@ -31,8 +27,6 @@ export interface Rules {
   stocks: number;
   /** Minutes; 0 = no limit. */
   time: number;
-  /** 0 off, 1 low, 2 medium, 3 high. */
-  items: number;
 }
 
 export type Phase = 'countdown' | 'play' | 'ended';
@@ -55,9 +49,7 @@ export class Match {
   stage: StageRT;
   rules: Rules;
   rng: Rng;
-  items: Item[] = [];
   projectiles: Projectile[] = [];
-  explosions: Explosion[] = [];
   events: SimEvent[] = [];
   /** Frames left; -1 = no limit. */
   timeLeft: number;
@@ -66,7 +58,6 @@ export class Match {
   winner = -1;
   suddenDeath = false;
   sdFrames = 0;
-  nextItemAt = 0;
   nextId = 1;
   endFrame = -1;
 
@@ -79,7 +70,6 @@ export class Match {
     for (const f of this.fighters) f.stocks = Math.max(1, o.rules.stocks);
     this.timeLeft = o.rules.time > 0 ? o.rules.time * 3600 : -1;
     this.placeAtSpawns();
-    this.scheduleItem();
     if (o.skipCountdown) {
       this.phase = 'play';
       this.countdown = 0;
@@ -137,7 +127,6 @@ export class Match {
     this.stage.update(this.frame);
     for (const f of this.fighters) f.step(this);
     this.bodyPush();
-    this.updateItems();
     this.updateProjectiles();
     for (const f of this.fighters) if (f.alive()) f.computeBoxes();
     this.positionHeld();
@@ -190,15 +179,6 @@ export class Match {
         B.top = Math.min(M.top - 250, B.top + 2.5);
       }
     }
-    if (this.rules.items > 0 && this.frame >= this.nextItemAt) {
-      if (this.items.filter((i) => i.state !== 'dead').length < MAX_ITEMS) this.spawnItem();
-      this.scheduleItem();
-    }
-  }
-
-  scheduleItem(): void {
-    const iv = SPAWN_INTERVAL[clamp(this.rules.items, 0, 3)];
-    this.nextItemAt = this.frame + (iv[1] > 0 ? Math.floor(this.rng.range(iv[0], iv[1])) : 1e9);
   }
 
   checkBlastZones(): void {
@@ -225,11 +205,6 @@ export class Match {
     if (f.grabbing) this.releaseGrab(f);
     if (f.grabbedBy) this.releaseGrab(f.grabbedBy);
     if (f.state === 'ledge') f.leaveLedge();
-    if (f.item) {
-      f.item.state = 'dead';
-      f.item.holder = null;
-      f.item = null;
-    }
     f.enter('dead');
     f.hitlag = 0;
     f.hitstun = 0;
@@ -331,17 +306,11 @@ export class Match {
       f.hitstun = 0;
       f.pendingLaunch = null;
       f.intangible = 0;
-      if (f.item) {
-        f.item.state = 'dead';
-        f.item = null;
-      }
       f.grabbing = null;
       f.grabbedBy = null;
       if (f.state === 'ledge') f.leaveLedge();
     }
-    this.items = [];
     this.projectiles = [];
-    this.explosions = [];
     this.stage.blast = { ...this.stage.def.blast };
     this.placeAtSpawns();
     for (const f of this.fighters) if (!tied.includes(f)) f.enter('dead');
@@ -420,8 +389,6 @@ export class Match {
       this.catchGrab(g.a, g.v, g.a.move?.def.grab?.command);
     }
     this.resolveProjectiles();
-    this.resolveExplosions();
-    this.resolveThrownItems();
   }
 
   applyHit(
@@ -603,7 +570,6 @@ export class Match {
     v.hitstun = 0;
     v.pendingLaunch = null;
     v.kbx = v.kby = v.vx = v.vy = 0;
-    if (v.item) this.dropItem(v);
     v.facing = a.facing === 1 ? -1 : 1;
     v.grabEscape = GRAB_BASE + v.percent * GRAB_PER_PERCENT;
     if (command) {
@@ -771,211 +737,6 @@ export class Match {
       }
     }
     if (this.projectiles.some((p) => p.dead)) this.projectiles = this.projectiles.filter((p) => !p.dead);
-  }
-
-  // ------------------------------------------------------------------ items
-
-  spawnItem(): void {
-    const r = this.rng.next();
-    const kind: ItemKind = r < 0.2 ? 'bat' : r < 0.45 ? 'blade' : r < 0.75 ? 'bomb' : 'fruit';
-    const M = this.stage.main;
-    const x = this.rng.range(M.x1 + 80, M.x2 - 80);
-    const y = M.top - 700;
-    this.items.push({
-      id: this.nextId++, kind, x, y, vx: 0, vy: 0, state: 'fall', holder: null, owner: -1, groundFrames: 0,
-      fuse: -1, spin: 0, r: ITEM_RADIUS[kind], hitVictims: [],
-    });
-    this.emit({ t: 'item', x, y, kind, action: 'spawn' });
-  }
-
-  updateItems(): void {
-    const M = this.stage.main;
-    const B = this.stage.blast;
-    for (const it of this.items) {
-      if (it.state === 'dead') continue;
-      if (it.state === 'held') {
-        const h = it.holder;
-        if (!h || !h.alive() || h.item !== it) {
-          it.state = 'fall';
-          it.holder = null;
-        } else {
-          it.x = h.x + h.pose.hdF.x * h.facing;
-          it.y = h.y - h.pose.hdF.y;
-        }
-        continue;
-      }
-      if (it.state === 'ground') {
-        it.groundFrames++;
-        if (it.kind === 'bomb' && it.fuse > 0 && --it.fuse === 0) {
-          this.explode(it.x, it.y - it.r, it.owner);
-          it.state = 'dead';
-          continue;
-        }
-        if (it.groundFrames > 900) it.state = 'dead';
-        const pl = this.stage.plats.find((p) => Math.abs(p.y - it.y) < 1 && it.x >= p.x1 - 1 && it.x <= p.x2 + 1);
-        if (pl) it.x += pl.vx;
-        else if (Math.abs(it.y - M.top) > 1 || it.x < M.x1 || it.x > M.x2) it.state = 'fall';
-        continue;
-      }
-      // fall / thrown
-      it.groundFrames++;
-      if (it.state === 'thrown' && it.groundFrames > 45) it.state = 'fall';
-      it.vy = Math.min(14, it.vy + (it.state === 'thrown' ? 0.35 : 0.6));
-      const py = it.y;
-      it.x += it.vx;
-      it.y += it.vy;
-      it.spin += it.vx * 0.02 + 0.05;
-      if (it.x + it.r > M.x1 && it.x - it.r < M.x2 && it.y > M.top + 1 && it.y - it.r * 2 < M.bottom) {
-        if (py <= M.top + 1 && it.vy >= 0 && it.x >= M.x1 && it.x <= M.x2) {
-          this.settleItem(it, M.top);
-        } else {
-          it.vx = -it.vx * 0.4;
-          it.x = it.x < (M.x1 + M.x2) / 2 ? M.x1 - it.r : M.x2 + it.r;
-        }
-      }
-      if ((it.state as Item['state']) !== 'ground' && it.vy > 0) {
-        for (const pl of this.stage.plats) {
-          if (py <= pl.y && it.y >= pl.y && it.x >= pl.x1 && it.x <= pl.x2) {
-            this.settleItem(it, pl.y);
-            break;
-          }
-        }
-      }
-      if (it.x < B.left || it.x > B.right || it.y > B.bottom) it.state = 'dead';
-    }
-    if (this.items.some((i) => i.state === 'dead')) this.items = this.items.filter((i) => i.state !== 'dead');
-  }
-
-  settleItem(it: Item, y: number): void {
-    if (it.state === 'thrown' && it.kind === 'bomb') {
-      this.explode(it.x, y - it.r, it.owner);
-      it.state = 'dead';
-      return;
-    }
-    it.y = y;
-    it.vx = 0;
-    it.vy = 0;
-    it.state = 'ground';
-    it.groundFrames = 0;
-    if (it.kind === 'bomb') it.fuse = BOMB_FUSE;
-  }
-
-  explode(x: number, y: number, owner: number): void {
-    this.explosions.push({ x, y, r: BOMB_RADIUS, frames: 6, owner, hit: BOMB_HIT, victims: [] });
-    this.emit({ t: 'explode', x, y, r: BOMB_RADIUS });
-  }
-
-  resolveExplosions(): void {
-    for (const e of this.explosions) {
-      for (const v of this.fighters) {
-        if (e.victims.includes(v.idx) || !v.canBeHit()) continue;
-        if (v.shielding() && Math.hypot(v.shieldX - e.x, v.shieldY - e.y) < v.shieldR + e.r) {
-          e.victims.push(v.idx);
-          this.applyShield(null, v, e.hit, true, e.x);
-          continue;
-        }
-        if (capHitsHurt(e.x, e.y, e.x, e.y, e.r, v)) {
-          e.victims.push(v.idx);
-          this.applyHit(null, v, e.hit, e.x, e.y, 1, e.owner, true);
-        }
-      }
-      e.frames--;
-    }
-    if (this.explosions.some((e) => e.frames <= 0)) this.explosions = this.explosions.filter((e) => e.frames > 0);
-  }
-
-  resolveThrownItems(): void {
-    for (const it of this.items) {
-      if (it.state !== 'thrown') continue;
-      for (const v of this.fighters) {
-        if (v.idx === it.owner || !v.canBeHit() || it.hitVictims.includes(v.idx)) continue;
-        const shield = v.shielding() && Math.hypot(v.shieldX - it.x, v.shieldY - it.y) < v.shieldR + it.r;
-        if (!shield && !capHitsHurt(it.x, it.y, it.x, it.y, it.r, v)) continue;
-        it.hitVictims.push(v.idx);
-        if (it.kind === 'bomb') {
-          this.explode(it.x, it.y, it.owner);
-          it.state = 'dead';
-          break;
-        }
-        if (shield) this.applyShield(null, v, THROWN_HIT, true, it.x);
-        else this.applyHit(null, v, THROWN_HIT, it.x - Math.sign(it.vx || 1) * 20, it.y, Math.sign(it.vx) || 1, it.owner, true, it.x, it.y);
-        it.state = 'fall';
-        it.vx *= -0.3;
-        it.vy = -6;
-        break;
-      }
-    }
-  }
-
-  tryPickup(f: Fighter): boolean {
-    if (f.item || !f.grounded) return false;
-    let best: Item | null = null;
-    let bd = Infinity;
-    for (const it of this.items) {
-      if (it.state !== 'ground' && it.state !== 'fall') continue;
-      const dx = Math.abs(it.x - f.x);
-      const dy = Math.abs(it.y - f.y);
-      if (dx < f.W / 2 + it.r + 14 && dy < 44 && dx < bd) {
-        best = it;
-        bd = dx;
-      }
-    }
-    if (!best) return false;
-    if (best.kind === 'fruit') {
-      f.percent = Math.max(0, f.percent - FRUIT_HEAL);
-      best.state = 'dead';
-      this.emit({ t: 'item', x: best.x, y: best.y, kind: 'fruit', action: 'heal' });
-      return true;
-    }
-    f.item = best;
-    best.state = 'held';
-    best.holder = f;
-    best.owner = f.idx;
-    best.fuse = -1;
-    this.emit({ t: 'item', x: best.x, y: best.y, kind: best.kind, action: 'pickup' });
-    return true;
-  }
-
-  dropItem(f: Fighter): void {
-    const it = f.item;
-    if (!it) return;
-    f.item = null;
-    it.holder = null;
-    it.state = 'fall';
-    it.vx = 0;
-    it.vy = -2;
-    it.groundFrames = 0;
-  }
-
-  throwItem(f: Fighter, dir: 'f' | 'b' | 'u' | 'd'): void {
-    const it = f.item;
-    if (!it) return;
-    f.item = null;
-    it.holder = null;
-    it.owner = f.idx;
-    it.hitVictims = [];
-    it.groundFrames = 0;
-    if (dir === 'd' && f.grounded) {
-      it.state = 'fall';
-      it.vx = 0;
-      it.vy = 0;
-      return;
-    }
-    it.state = 'thrown';
-    if (dir === 'f') {
-      it.vx = 17 * f.facing;
-      it.vy = -3;
-    } else if (dir === 'b') {
-      it.vx = -17 * f.facing;
-      it.vy = -3;
-    } else if (dir === 'u') {
-      it.vx = f.vx * 0.3;
-      it.vy = -19;
-    } else {
-      it.vx = 0;
-      it.vy = 16;
-    }
-    this.emit({ t: 'item', x: it.x, y: it.y, kind: it.kind, action: 'throw' });
   }
 }
 

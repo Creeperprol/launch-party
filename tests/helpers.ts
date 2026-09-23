@@ -6,7 +6,7 @@ import { Match, type Rules } from '../src/sim/match';
 
 export { FIGHTERS, GROTT, NOVA, SABLE, ZIP, CROWN_RUINS, STAGES };
 
-export const RULES: Rules = { stocks: 3, time: 0, items: 0 };
+export const RULES: Rules = { stocks: 3, time: 0 };
 
 export function makeMatch(fighters: FighterDef[] = [NOVA, NOVA], stage: StageDef = CROWN_RUINS, rules: Partial<Rules> = {}, seed = 1): Match {
   return new Match({

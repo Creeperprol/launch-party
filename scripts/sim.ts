@@ -42,7 +42,7 @@ for (let i = 0; i < matches; i++) {
   const stage = STAGES[i % STAGES.length];
   const fighters = levels.map((_, p) => FIGHTERS[(i + p * (1 + Math.floor(i / FIGHTERS.length))) % FIGHTERS.length]);
   try {
-    const m = new Match({ stage, players: fighters.map((f, p) => ({ fighter: f, cpu: levels[p], palette: p, slot: p })), rules: { stocks, time: 7, items: 2 }, seed });
+    const m = new Match({ stage, players: fighters.map((f, p) => ({ fighter: f, cpu: levels[p], palette: p, slot: p })), rules: { stocks, time: 7 }, seed });
     const cpus = levels.map((l, p) => new CpuController(p, l, seed * 97 + p * 13));
     let f = 0;
     let bad = false;

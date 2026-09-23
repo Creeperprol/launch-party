@@ -20,7 +20,6 @@ export function hashMatch(m: Match): string {
     add(f.move ? f.move.id + ':' + f.move.frame : '-');
     add(f.shieldHP); add(f.hitlag); add(f.hitstun);
   }
-  for (const it of m.items) { add(it.kind); add(it.x); add(it.y); add(it.state); }
   for (const p of m.projectiles) { add(p.kind); add(p.x); add(p.y); }
   add(m.rng.s);
   return h.toString(16).padStart(8, '0');

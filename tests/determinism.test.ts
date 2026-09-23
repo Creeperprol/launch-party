@@ -8,7 +8,7 @@ function runCpuMatch(seed: number, frames: number): string {
   const m = new Match({
     stage: STAGES[2],
     players: FIGHTERS.map((f, i) => ({ fighter: f, cpu: 9 - i * 2, palette: i, slot: i })),
-    rules: { stocks: 3, time: 3, items: 3 },
+    rules: { stocks: 3, time: 3 },
     seed,
   });
   const cpus = FIGHTERS.map((_, i) => new CpuController(i, 9 - i * 2, seed * 31 + i));

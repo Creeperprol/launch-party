@@ -32,7 +32,6 @@ interface Skill {
   di: number;
   punish: number;
   edgeguard: number;
-  items: boolean;
   mash: number;
   idleChance: number;
 }
@@ -50,7 +49,6 @@ function skillFor(level: number): Skill {
     di: level >= 7 ? lerp(0.6, 1, (level - 7) / 2) : 0,
     punish: level >= 7 ? lerp(0.5, 0.95, (level - 7) / 2) : level >= 4 ? 0.25 : 0,
     edgeguard: level >= 7 ? lerp(0.35, 0.8, (level - 7) / 2) : 0,
-    items: level >= 4,
     mash: lerp(0.15, 0.9, k),
     idleChance: level <= 3 ? lerp(0.35, 0.1, (level - 1) / 2) : 0,
   };
@@ -273,15 +271,6 @@ export class CpuController {
       return;
     }
     const seenT = this.seen(T.idx);
-    // 0. step away from a lit bomb
-    if (this.level >= 3) {
-      for (const it of m.items) {
-        if (it.kind === 'bomb' && it.state === 'ground' && it.fuse > 0 && it.fuse < 170 && Math.abs(it.x - me.x) < 240 && Math.abs(it.y - me.y) < 160) {
-          out.x = this.safeDir(m, me, me.x >= it.x ? 1 : -1) || (me.x >= it.x ? -1 : 1);
-          return;
-        }
-      }
-    }
     // 1. defend against an incoming attack we can see
     if (this.threatened(m, me, T, seenT)) {
       const r = this.rng.next();
@@ -297,9 +286,7 @@ export class CpuController {
         return;
       }
     }
-    // 2. items
-    if (this.sk.items && this.itemLogic(m, me, T, out)) return;
-    // 3. edge-guard an opponent who is recovering
+    // 2. edge-guard an opponent who is recovering
     if (this.offstage(m, T) && !T.grounded && T.state !== 'respawn' && this.rng.chance(this.sk.edgeguard)) {
       if (this.edgeguard(m, me, T, out)) return;
     }
@@ -610,41 +597,6 @@ export class CpuController {
       }
     }
     if (me.state === 'shieldstun' || (this.holdBtn.shield ?? 0) > 0) out.shield = true;
-  }
-
-  // ------------------------------------------------------------------ items
-
-  private itemLogic(m: Match, me: Fighter, T: Fighter, out: InputFrame): boolean {
-    const it = me.item;
-    if (it) {
-      const dx = T.x - me.x;
-      if (it.kind === 'bomb' && Math.abs(T.y - me.y) < 90 && Math.abs(dx) < 520 && Math.abs(dx) > 90) {
-        if (Math.sign(dx) !== me.facing) {
-          out.x = Math.sign(dx) * 0.5;
-          return true;
-        }
-        this.press(out, 'grab');
-        return true;
-      }
-      return false;
-    }
-    let best = null as null | (typeof m.items)[number];
-    let bd = 340;
-    for (const i of m.items) {
-      if (i.state !== 'ground') continue;
-      const d = Math.abs(i.x - me.x);
-      if (Math.abs(i.y - me.y) < 40 && d < bd) {
-        best = i;
-        bd = d;
-      }
-    }
-    if (!best || Math.abs(T.x - me.x) < 200) return false;
-    if (bd < me.W / 2 + best.r + 8) {
-      this.press(out, 'attack');
-      return true;
-    }
-    out.x = this.safeDir(m, me, Math.sign(best.x - me.x));
-    return true;
   }
 
   // ------------------------------------------------------------------ edge-guarding

@@ -148,7 +148,7 @@ export interface MoveDef {
   /** Once per airtime when started airborne. */
   airOnce?: boolean;
   hooks?: MoveHooks;
-  /** Weapon hidden during this move (e.g. item swings replace the sword). */
+  /** Weapon hidden during this move. */
   hideWeapon?: boolean;
 }
 

@@ -8,7 +8,6 @@ import { InputState } from './input';
 import { applyDI, hitstunFrames } from './knockback';
 import { approach, clamp } from './math';
 import type { Match } from './match';
-import { ITEM_LENGTH, ITEM_MOVES, type Item } from './items';
 import { blankPose, blankResolved, posePoint, poseTargets, resolvePose, type PoseCtx, type Resolved } from './pose';
 import type { LedgeRT } from './stage';
 
@@ -109,7 +108,6 @@ export class Fighter {
   grabbing: Fighter | null = null;
   grabbedBy: Fighter | null = null;
   grabEscape = 0;
-  item: Item | null = null;
   lastHitBy = -1;
   platIgnore = -1;
   platIgnoreTimer = 0;
@@ -245,8 +243,7 @@ export class Fighter {
   }
 
   startMove(id: string, m: Match): boolean {
-    const rid = this.resolveMoveId(id);
-    const d = this.def.moves[rid];
+    const d = this.def.moves[id];
     if (!d) return false;
     if (d.airOnce && !this.grounded) {
       if (this.sideBUsed) return false;
@@ -254,7 +251,7 @@ export class Fighter {
     }
     this.move = {
       def: d,
-      id: rid,
+      id,
       frame: 0,
       charge: 0,
       charging: false,
@@ -268,19 +265,6 @@ export class Fighter {
     this.sf = 0;
     d.hooks?.start?.(this, m);
     return true;
-  }
-
-  resolveMoveId(id: string): string {
-    const it = this.item;
-    if (!it) return id;
-    if (it.kind === 'bat' && id === 'fsmash') return 'batSwing';
-    if (it.kind === 'blade') {
-      if (id === 'jab1') return 'bladeJab';
-      if (id === 'ftilt' || id === 'utilt' || id === 'dtilt') return 'bladeTilt';
-      if (id === 'dashAttack') return 'bladeDash';
-      if (id === 'fsmash' || id === 'usmash' || id === 'dsmash') return 'bladeSmash';
-    }
-    return id;
   }
 
   endMove(m: Match): void {
@@ -517,7 +501,6 @@ export class Fighter {
     }
     if (I.pressed('grab')) {
       I.consume('grab');
-      if (this.item) return this.startMove('itemThrow', m);
       return this.startMove(dashing ? 'dashGrab' : 'grab', m);
     }
     if (I.held('shield') && this.shieldHP > 0) {
@@ -536,7 +519,6 @@ export class Fighter {
     }
     if (I.pressed('attack')) {
       I.consume('attack');
-      if (!this.item && m.tryPickup(this)) return true;
       if (dashing) return this.startMove('dashAttack', m);
       const d = this.state === 'crouch' ? 'd' : this.stickDir();
       if (d === 'u') return this.startMove('utilt', m);
@@ -561,10 +543,6 @@ export class Fighter {
       I.consume('shield');
       this.airdodgeUsed = true;
       return this.startMove('airdodge', m);
-    }
-    if (I.pressed('grab') && this.item) {
-      I.consume('grab');
-      return this.startMove('itemThrow', m);
     }
     if (I.pressed('special')) return this.doSpecial(m);
     if (I.cPressed()) {
@@ -846,8 +824,7 @@ export class Fighter {
         if (I.pressed('grab') || I.pressed('attack')) {
           I.consume('grab');
           I.consume('attack');
-          if (this.item) this.startMove('itemThrow', m);
-          else this.startMove('grab', m);
+          this.startMove('grab', m);
           break;
         }
         if (I.pressed('special') && this.stickDir() === 'u') {
@@ -1153,7 +1130,6 @@ export class Fighter {
       this.ledgeIntUsed = true;
     }
     this.lastHitBy = -1;
-    if (this.item) m.dropItem(this);
     m.emit({ t: 'ledge', x: L.x, y: L.y, who: this.idx });
   }
 
@@ -1224,10 +1200,8 @@ export class Fighter {
     }
   }
 
-  /** Blade length for pose resolution: a swung item replaces the fighter's own weapon. */
+  /** Blade length for pose resolution. */
   weaponLen(): number {
-    const it = this.item;
-    if (it && this.move && this.state === 'move' && ITEM_MOVES.has(this.move.id)) return ITEM_LENGTH[it.kind] ?? 0;
     return this.def.rig.weapon ? this.def.rig.weapon.len : 0;
   }
 

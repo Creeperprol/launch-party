@@ -1,10 +1,8 @@
 import type { Palette, Rig } from '../sim/defs';
 import type { Fighter } from '../sim/fighter';
-import { ITEM_MOVES, type Item } from '../sim/items';
 import type { V2 } from '../sim/math';
 import type { Resolved } from '../sim/pose';
 import { INK, mix } from './color';
-import { drawItemShape } from './itemDraw';
 
 const OUT = 2.8;
 
@@ -120,8 +118,6 @@ export function drawFighter(ctx: CanvasRenderingContext2D, f: Fighter, o: DrawOp
   const armW = r.limbR * 2;
   const legW = r.limbR * 2.5;
   const look = f.def.look;
-  const it = f.item;
-  const itemSwing = !!(it && f.move && f.state === 'move' && ITEM_MOVES.has(f.move.id));
 
   // ---- pass 1: silhouette outline
   behindExtras(ctx, c, true);
@@ -145,8 +141,6 @@ export function drawFighter(ctx: CanvasRenderingContext2D, f: Fighter, o: DrawOp
   line(ctx, [P.hipB, P.knB, P.ftB], legW, mix(legMain, INK, LIMB_DARK));
   footShape(ctx, c, P.ftB, P.knB, false, mix(footColor(c), INK, LIMB_DARK));
   torso(ctx, c);
-  // back-hand item (not swinging) hangs in front of the body so it stays readable
-  if (it && !itemSwing) drawHeldItem(ctx, it, P.hdB, -100 + Math.sin(o.t * 0.1) * 5);
   line(ctx, [P.hipF, P.knF, P.ftF], legW, legMain);
   footShape(ctx, c, P.ftF, P.knF, false, footColor(c));
   headShape(ctx, c, false);
@@ -158,8 +152,7 @@ export function drawFighter(ctx: CanvasRenderingContext2D, f: Fighter, o: DrawOp
   disc(ctx, P.hdF, r.handR + OUT * 0.7, INK);
   disc(ctx, P.hdF, r.handR, handColor(c));
   if (look === 'grott') claws(ctx, c);
-  if (itemSwing && it) drawSwingItem(ctx, it, P);
-  else if (look === 'sable' && !(f.move && f.move.def.hideWeapon)) sword(ctx, c);
+  if (look === 'sable' && !(f.move && f.move.def.hideWeapon)) sword(ctx, c);
   ctx.restore();
 }
 
@@ -605,21 +598,4 @@ function sword(ctx: CanvasRenderingContext2D, c: LookCtx): void {
   line(ctx, [guardA, guardB], 5 + OUT * 1.2, INK);
   line(ctx, [guardA, guardB], 5, pal.accent);
   disc(ctx, hilt, 4, pal.accent);
-}
-
-function drawHeldItem(ctx: CanvasRenderingContext2D, it: Item, hand: V2, angleDeg: number): void {
-  ctx.save();
-  ctx.translate(hand.x, hand.y);
-  ctx.rotate((angleDeg * Math.PI) / 180);
-  drawItemShape(ctx, it.kind, 0.8, 0, true);
-  ctx.restore();
-}
-
-function drawSwingItem(ctx: CanvasRenderingContext2D, it: Item, P: Resolved): void {
-  const ang = Math.atan2(P.wTip.y - P.wBase.y, P.wTip.x - P.wBase.x);
-  ctx.save();
-  ctx.translate(P.wBase.x, P.wBase.y);
-  ctx.rotate(ang);
-  drawItemShape(ctx, it.kind, 1, 0, true);
-  ctx.restore();
 }

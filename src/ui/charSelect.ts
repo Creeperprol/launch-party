@@ -7,7 +7,7 @@ import { CPU_GREY, INK, PLAYER_COLORS, mix, rgba } from '../render/color';
 import { drawFighter } from '../render/fighterDraw';
 import type { Flow } from './flow';
 import { posedFighter } from './poses';
-import { ITEM_LABELS, STOCK_OPTIONS, TIME_OPTIONS, type Session } from './session';
+import { STOCK_OPTIONS, TIME_OPTIONS, type Session } from './session';
 import { backdrop, focusRing, font, header, hoverRing, inRect, label, roundRectPath, slab, slabPath, type Rect } from './widgets';
 
 type ElKind = 'rule' | 'roster' | 'type' | 'fighter' | 'level' | 'fight' | 'touchjoin';
@@ -25,7 +25,7 @@ interface Cursor {
   focus: string;
 }
 
-const RULES = ['stocks', 'time', 'items'] as const;
+const RULES = ['stocks', 'time'] as const;
 const CARD_Y = 548;
 const CARD_H = 412;
 
@@ -56,7 +56,7 @@ export class CharSelectScene implements Scene {
       this.els.push(e);
       this.byId.set(e.id, e);
     };
-    RULES.forEach((r, i) => add({ id: `rule:${r}`, kind: 'rule', arg: i, rect: { x: 930 + i * 322, y: 46, w: 296, h: 72 } }));
+    RULES.forEach((r, i) => add({ id: `rule:${r}`, kind: 'rule', arg: i, rect: { x: 1074 + i * 420, y: 46, w: 380, h: 72 } }));
     const tw = 330;
     const gap = 24;
     const x0 = (VIEW_W - (5 * tw + 4 * gap)) / 2;
@@ -151,8 +151,7 @@ export class CharSelectScene implements Scene {
   private cycleRule(i: number, dir: number): void {
     const r = this.s.rules;
     if (i === 0) r.stocks = STOCK_OPTIONS[(STOCK_OPTIONS.indexOf(r.stocks) + dir + STOCK_OPTIONS.length) % STOCK_OPTIONS.length];
-    else if (i === 1) r.time = TIME_OPTIONS[(TIME_OPTIONS.indexOf(r.time) + dir + TIME_OPTIONS.length) % TIME_OPTIONS.length];
-    else r.items = (r.items + dir + 4) % 4;
+    else r.time = TIME_OPTIONS[(TIME_OPTIONS.indexOf(r.time) + dir + TIME_OPTIONS.length) % TIME_OPTIONS.length];
   }
 
   /** Activate an element on behalf of a player cursor (or the mouse when cur is null). */
@@ -321,7 +320,6 @@ export class CharSelectScene implements Scene {
     const ruleText = [
       `STOCKS  ${S.rules.stocks}`,
       `TIME  ${S.rules.time === 0 ? 'OFF' : `${S.rules.time}:00`}`,
-      `ITEMS  ${ITEM_LABELS[S.rules.items]}`,
     ];
     RULES.forEach((r, i) => {
       const el = this.byId.get(`rule:${r}`)!;

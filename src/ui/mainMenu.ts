@@ -9,7 +9,7 @@ import { posedFighter } from './poses';
 import { backdrop, font, hints, hoverRing, inRect, label, slab, type Rect } from './widgets';
 
 interface Item {
-  id: 'versus' | 'controls';
+  id: 'versus' | 'controls' | 'settings';
   rect: Rect;
   title: string;
   sub: string;
@@ -25,6 +25,7 @@ export class MainMenuScene implements Scene {
   items: Item[] = [
     { id: 'versus', rect: { x: 150, y: 300, w: 800, h: 220 }, title: 'VERSUS', sub: '2–4 players · any mix of humans and CPUs', color: PLAYER_COLORS[0] },
     { id: 'controls', rect: { x: 150, y: 600, w: 640, h: 150 }, title: 'CONTROLS', sub: 'Keyboard & gamepad layouts', color: PLAYER_COLORS[1] },
+    { id: 'settings', rect: { x: 150, y: 780, w: 640, h: 130 }, title: 'SETTINGS', sub: 'FPS counter & touch controls', color: PLAYER_COLORS[2] },
   ];
 
   constructor(flow: Flow) {
@@ -48,8 +49,10 @@ export class MainMenuScene implements Scene {
     }
     if (go) {
       app.sfx.menuConfirm();
-      if (this.items[this.sel].id === 'versus') this.flow.charSelect();
-      else this.flow.controls();
+      const id = this.items[this.sel].id;
+      if (id === 'versus') this.flow.charSelect();
+      else if (id === 'controls') this.flow.controls();
+      else this.flow.settings();
       return;
     }
     if (inp.back) {

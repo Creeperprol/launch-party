@@ -35,7 +35,6 @@ export const GRAB_BASE = 60;
 export const GRAB_PER_PERCENT = 0.5;
 export const GRAB_MASH = 3;
 
-export const ITEM_DESPAWN = 900;
 export const SUDDEN_DEATH_PERCENT = 300;
 export const COUNTDOWN_FRAMES = 180;
 export const MAX_PERCENT = 999.9;

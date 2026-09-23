@@ -30,7 +30,7 @@ const SANDBOX: StageDef = {
 const cache = new Map<string, Recovery>();
 
 function sandbox(def: FighterDef): Match {
-  const m = new Match({ stage: SANDBOX, players: [{ fighter: def, cpu: 0 }, { fighter: def, cpu: 0 }], rules: { stocks: 1, time: 0, items: 0 }, seed: 1, skipCountdown: true });
+  const m = new Match({ stage: SANDBOX, players: [{ fighter: def, cpu: 0 }, { fighter: def, cpu: 0 }], rules: { stocks: 1, time: 0 }, seed: 1, skipCountdown: true });
   for (const f of m.fighters) {
     f.x = f.idx === 0 ? 0 : 1e6;
     f.y = 0;

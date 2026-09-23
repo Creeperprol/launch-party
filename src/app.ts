@@ -2,6 +2,7 @@ import { Sfx } from './audio/sfx';
 import { Devices } from './input/devices';
 import { isTouchCapable } from './input/touchpad';
 import { VIEW_H, VIEW_W } from './render/camera';
+import { loadSettings, saveSettings } from './ui/settings';
 
 export interface Scene {
   name: string;
@@ -42,11 +43,17 @@ export class App {
     window.addEventListener('keydown', (e) => {
       if (e.repeat) return;
       if (e.code === 'Backquote') this.debug = !this.debug;
-      if (e.code === 'KeyP' && !e.metaKey && !e.ctrlKey) this.showFps = !this.showFps;
+      if (e.code === 'KeyP' && !e.metaKey && !e.ctrlKey) {
+        this.showFps = !this.showFps;
+        this.persistSettings();
+      }
       if (e.code === 'KeyM' && !e.metaKey && !e.ctrlKey) this.sfx.toggleMute();
       this.sfx.unlock();
     });
     window.addEventListener('pointerdown', () => this.sfx.unlock());
+    const saved = loadSettings();
+    this.showFps = saved.showFps;
+    this.devices.touch.setLayout(saved.touchLayout);
     this.resize();
     const w = window as unknown as Record<string, unknown>;
     w.__game = {
@@ -54,6 +61,11 @@ export class App {
       perf: () => ({ ...this.perf, samples: undefined, frameTimes: undefined }),
       app: this,
     };
+  }
+
+  /** Save the current FPS-counter and touch-layout settings to localStorage. */
+  persistSettings(): void {
+    saveSettings({ showFps: this.showFps, touchLayout: this.devices.touch.getLayout() });
   }
 
   resize(): void {
@@ -188,10 +200,13 @@ export class App {
             this.scene = this.wipe.next;
           }
           if (this.wipe.t >= this.wipeLen()) this.wipe = null;
+          // Scene.update() doesn't run during a wipe, so don't clear input edges (click/tap
+          // pulses) here either — otherwise a click landing mid-transition is silently lost
+          // before the new scene ever gets a chance to see it.
         } else {
           this.scene.update(this);
+          this.devices.endTick();
         }
-        this.devices.endTick();
         this.tick++;
         this.acc -= step;
         n++;

@@ -73,16 +73,6 @@ export class Particles {
     this.add({ kind: 'ring', x, y, life: 30, size: 380, color });
   }
 
-  explosion(x: number, y: number, r: number): void {
-    this.add({ kind: 'glow', x, y, life: 18, size: r * 1.6, color: '#ffb347' });
-    this.add({ kind: 'ring', x, y, life: 16, size: r * 1.5, color: '#fff2c0' });
-    for (let i = 0; i < 26; i++) {
-      const a = rand(0, Math.PI * 2);
-      const s = rand(3, 12);
-      this.add({ kind: i % 2 ? 'flame' : 'smoke', x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: rand(20, 40), size: rand(14, 30), color: i % 2 ? '#ff7a2a' : '#6a6070', drag: 0.9 });
-    }
-  }
-
   shatter(x: number, y: number, color: string): void {
     for (let i = 0; i < 22; i++) {
       const a = rand(0, Math.PI * 2);
@@ -97,10 +87,6 @@ export class Particles {
       const a = rand(0, Math.PI * 2);
       this.add({ kind: 'star', x: x + Math.cos(a) * rand(4, 30), y: y + Math.sin(a) * rand(4, 30), life: rand(14, 26), size: rand(8, 16), color, rot: rand(0, 3), vr: 0.1 });
     }
-  }
-
-  heal(x: number, y: number): void {
-    for (let i = 0; i < 10; i++) this.add({ kind: 'plus', x: x + rand(-30, 30), y: y + rand(-40, 10), vy: rand(-3, -1.5), life: rand(26, 40), size: rand(8, 14), color: '#5dff9a', drag: 0.97 });
   }
 
   update(): void {

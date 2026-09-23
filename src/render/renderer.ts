@@ -7,7 +7,6 @@ import { drawDebugLabels, drawDebugWorld } from './debug';
 import { drawFighter } from './fighterDraw';
 import { Particles, Swooshes, star } from './fx';
 import { drawHud } from './hud';
-import { drawItemShape } from './itemDraw';
 import { drawBackground, drawStage } from './stageDraw';
 
 export interface PlayerInfo {
@@ -100,19 +99,11 @@ export class MatchRenderer {
       case 'ledge':
         P.sparkle(e.x, e.y, '#bff6ff', 4);
         break;
-      case 'explode':
-        P.explosion(e.x, e.y, e.r);
-        this.cam.punch(22);
-        break;
       case 'reflect':
         P.add({ kind: 'ring', x: e.x, y: e.y, life: 12, size: 50, color: '#8ff6ff' });
         break;
       case 'counter':
         P.add({ kind: 'star', x: e.x, y: e.y, life: 16, size: 90, color: '#bfe0ff', rot: 0.3, vr: 0.05 });
-        break;
-      case 'item':
-        if (e.action === 'heal') P.heal(e.x, e.y);
-        else if (e.action === 'spawn') P.sparkle(e.x, e.y + 600, '#fff6a0', 0);
         break;
       case 'finalhit':
         this.cam.focus = { x: e.x, y: e.y, zoom: 1.9, frames: 40 };
@@ -131,15 +122,6 @@ export class MatchRenderer {
     cam.apply(ctx);
     drawStage(ctx, m.stage, this.t);
     this.drawRespawnPlatforms(ctx, m);
-    for (const it of m.items) {
-      if (it.state === 'held' || it.state === 'dead') continue;
-      ctx.save();
-      ctx.translate(it.x, it.y - (it.state === 'ground' ? it.r : 0));
-      if (it.state !== 'ground') ctx.rotate(it.spin);
-      if (it.state === 'ground' && it.groundFrames > 780 && Math.floor(this.t / 4) % 2 === 0) ctx.globalAlpha = 0.35;
-      drawItemShape(ctx, it.kind, 1, this.t, false);
-      ctx.restore();
-    }
     for (const f of m.fighters) if (f.alive()) this.drawOneFighter(ctx, f, m);
     this.swoosh.draw(ctx, m.fighters);
     this.drawProjectiles(ctx, m);
@@ -290,12 +272,6 @@ export class MatchRenderer {
         ctx.fillStyle = '#fffbe0';
         star(ctx, p.x, p.y, p.r * 0.9, p.r * 0.35, p.age * 0.3, 4);
       }
-    }
-    for (const e of m.explosions) {
-      ctx.fillStyle = `rgba(255,200,100,${e.frames * 0.08})`;
-      ctx.beginPath();
-      ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
-      ctx.fill();
     }
   }
 
