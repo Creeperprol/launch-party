@@ -2,10 +2,13 @@ import { VIEW_H, VIEW_W } from '../render/camera';
 import { clamp } from '../sim/math';
 import { neutralInput, type InputFrame } from '../sim/input';
 
-export type TouchBtn = 'jump' | 'attack' | 'special' | 'shield' | 'grab' | 'smash';
+/** No grab button: shield + attack grabs, same as every other input device. */
+export type TouchBtn = 'jump' | 'attack' | 'special' | 'shield' | 'smash';
 
-const BTN_KEYS: readonly TouchBtn[] = ['jump', 'attack', 'special', 'shield', 'grab', 'smash'];
-const BTN_LABEL: Record<TouchBtn, string> = { jump: 'JUMP', attack: 'ATK', special: 'SPC', shield: 'SH', grab: 'GR', smash: 'SM' };
+const BTN_KEYS: readonly TouchBtn[] = ['jump', 'attack', 'special', 'shield', 'smash'];
+const BTN_LABEL: Record<TouchBtn, string> = { jump: 'JUMP', attack: 'ATK', special: 'SPC', shield: 'SH', smash: 'SM' };
+/** Touches left of this line that miss every control become a floating joystick. */
+const STICK_ZONE_X = VIEW_W * 0.45;
 
 interface Circle {
   x: number;
@@ -26,9 +29,8 @@ const DEFAULT_LAYOUT: TouchLayout = {
     jump: { x: 1590, y: 700 },
     special: { x: 1710, y: 700 },
     smash: { x: 1830, y: 700 },
-    shield: { x: 1590, y: 830 },
-    attack: { x: 1710, y: 830 },
-    grab: { x: 1850, y: 830 },
+    shield: { x: 1620, y: 840 },
+    attack: { x: 1780, y: 840 },
   },
   pause: { x: 60, y: 60 },
 };
@@ -56,19 +58,21 @@ export class TouchPad {
     special: { ...DEFAULT_LAYOUT.buttons.special, r: 58 },
     smash: { ...DEFAULT_LAYOUT.buttons.smash, r: 58 },
     shield: { ...DEFAULT_LAYOUT.buttons.shield, r: 58 },
-    attack: { ...DEFAULT_LAYOUT.buttons.attack, r: 64 },
-    grab: { ...DEFAULT_LAYOUT.buttons.grab, r: 58 },
+    attack: { ...DEFAULT_LAYOUT.buttons.attack, r: 70 },
   };
   readonly pause: Circle = { x: DEFAULT_LAYOUT.pause.x, y: DEFAULT_LAYOUT.pause.y, r: 40 };
 
   private toLogical: (cx: number, cy: number) => [number, number] = (x, y) => [x, y];
   private stickPointer: number | null = null;
+  /** Where the current stick touch is centred (the layout spot, or wherever a floating touch began). */
+  private originX = 0;
+  private originY = 0;
   private stickX = 0;
   private stickY = 0;
   private drawX = 0;
   private drawY = 0;
   private btnPointer = new Map<TouchBtn, number>();
-  private held: Record<TouchBtn, boolean> = { jump: false, attack: false, special: false, shield: false, grab: false, smash: false };
+  private held: Record<TouchBtn, boolean> = { jump: false, attack: false, special: false, shield: false, smash: false };
   private pausePointer: number | null = null;
   private pauseTapped = false;
   private pauseHeld = false;
@@ -81,6 +85,7 @@ export class TouchPad {
   attach(canvas: HTMLCanvasElement, toLogical: (cx: number, cy: number) => [number, number]): void {
     this.toLogical = toLogical;
     canvas.addEventListener('pointerdown', (e) => this.onDown(e), { passive: false });
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     window.addEventListener('pointermove', (e) => this.onMove(e), { passive: false });
     window.addEventListener('pointerup', (e) => this.onUp(e));
     window.addEventListener('pointercancel', (e) => this.onUp(e));
@@ -130,9 +135,10 @@ export class TouchPad {
       }
       return;
     }
-    if (this.stickPointer === null && this.dist(x, y, this.stick) <= this.stick.r + 40) {
-      this.stickPointer = e.pointerId;
-      this.updateStick(x, y);
+    if (this.pausePointer === null && this.dist(x, y, this.pause) <= this.pause.r + 16) {
+      this.pausePointer = e.pointerId;
+      this.pauseHeld = true;
+      this.pauseTapped = true;
       e.preventDefault();
       return;
     }
@@ -146,10 +152,13 @@ export class TouchPad {
         return;
       }
     }
-    if (this.pausePointer === null && this.dist(x, y, this.pause) <= this.pause.r + 16) {
-      this.pausePointer = e.pointerId;
-      this.pauseHeld = true;
-      this.pauseTapped = true;
+    if (this.stickPointer !== null) return;
+    const onStick = this.dist(x, y, this.stick) <= this.stick.r + 40;
+    if (onStick || x < STICK_ZONE_X) {
+      this.stickPointer = e.pointerId;
+      this.originX = onStick ? this.stick.x : x;
+      this.originY = onStick ? this.stick.y : y;
+      this.updateStick(x, y);
       e.preventDefault();
     }
   }
@@ -222,8 +231,8 @@ export class TouchPad {
   }
 
   private updateStick(x: number, y: number): void {
-    let dx = x - this.stick.x;
-    let dy = y - this.stick.y;
+    let dx = x - this.originX;
+    let dy = y - this.originY;
     const d = Math.hypot(dx, dy);
     const dz = 8;
     if (d < dz) {
@@ -255,8 +264,8 @@ export class TouchPad {
     return {
       x: this.stickX, y: this.stickY, cx: 0, cy: 0,
       jump: this.held.jump, attack: this.held.attack, special: this.held.special,
-      shield: this.held.shield, grab: this.held.grab, smash: this.held.smash,
-      digital: false,
+      shield: this.held.shield, grab: false, smash: this.held.smash,
+      digital: true,
     };
   }
 
@@ -268,18 +277,20 @@ export class TouchPad {
       ctx.shadowColor = 'rgba(255,224,102,0.8)';
       ctx.shadowBlur = 14;
     }
-    // joystick
+    // joystick (follows a floating touch while held)
+    const stickActive = this.stickPointer !== null;
+    const sx = stickActive ? this.originX : this.stick.x;
+    const sy = stickActive ? this.originY : this.stick.y;
     ctx.fillStyle = 'rgba(20,16,40,0.38)';
     ctx.strokeStyle = this.editTarget === this.stick ? '#ffe066' : 'rgba(255,255,255,0.55)';
     ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.arc(this.stick.x, this.stick.y, this.stick.r, 0, Math.PI * 2);
+    ctx.arc(sx, sy, this.stick.r, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-    const stickActive = this.stickPointer !== null;
     ctx.fillStyle = stickActive ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.5)';
     ctx.beginPath();
-    ctx.arc(this.stick.x + this.drawX, this.stick.y + this.drawY, 42, 0, Math.PI * 2);
+    ctx.arc(sx + this.drawX, sy + this.drawY, 42, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = 'rgba(15,11,31,0.7)';
     ctx.lineWidth = 3;
@@ -302,6 +313,10 @@ export class TouchPad {
       ctx.fillStyle = pressed ? '#15111f' : 'rgba(255,255,255,0.85)';
       ctx.fillText(BTN_LABEL[b], c.x, c.y + 1);
     }
+    const sh = this.buttons.shield;
+    ctx.font = '800 15px "Avenir Next", "Futura", "Helvetica Neue", Arial, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.fillText('+ATK = GRAB', sh.x, sh.y + sh.r + 16);
     // pause
     ctx.fillStyle = this.pauseHeld ? 'rgba(255,224,102,0.85)' : 'rgba(20,16,40,0.5)';
     ctx.strokeStyle = this.editTarget === this.pause ? '#ffe066' : 'rgba(255,255,255,0.6)';

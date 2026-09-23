@@ -7,7 +7,11 @@
     <title>LAUNCH PARTY</title>
     <link rel="icon" href="data:," />
     <style>
-      html, body { margin: 0; height: 100%; background: #07060d; overflow: hidden; }
+      html, body { margin: 0; height: 100%; background: #07060d; overflow: hidden; overscroll-behavior: none; }
+      body {
+        touch-action: none; user-select: none; -webkit-user-select: none;
+        -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+      }
       body { display: grid; place-items: center; }
       canvas { display: block; outline: none; image-rendering: auto; touch-action: none; }
     </style>

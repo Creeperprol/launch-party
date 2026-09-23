@@ -17,7 +17,7 @@ export interface InputFrame {
   grab: boolean;
   /** Keyboard smash key. */
   smash: boolean;
-  /** Digital source (keyboard): every direction press is full strength, so flick-smash is disabled. */
+  /** Digital source (keyboard, touch): stick flicks aren't possible, so flick-smash is disabled and threshold crossings count as flicks. */
   digital: boolean;
 }
 
@@ -74,13 +74,15 @@ export class InputState {
     }
     const x = this.cur.x;
     const y = this.cur.y;
-    if (Math.abs(x) >= 0.8 && Math.abs(this.prev.x) < 0.8 && this.wasNeutral(this.xHist, Math.sign(x))) {
+    // Digital sources (keys, touch stick) can't physically flick, so crossing the threshold counts.
+    const dig = this.cur.digital;
+    if (Math.abs(x) >= 0.8 && Math.abs(this.prev.x) < 0.8 && (dig || this.wasNeutral(this.xHist, Math.sign(x)))) {
       this.flickXAt = this.frame;
       this.flickXDir = Math.sign(x);
       this.flickXUsed = false;
       this.mash++;
     }
-    if (Math.abs(y) >= 0.8 && Math.abs(this.prev.y) < 0.8 && this.wasNeutral(this.yHist, Math.sign(y))) {
+    if (Math.abs(y) >= 0.8 && Math.abs(this.prev.y) < 0.8 && (dig || this.wasNeutral(this.yHist, Math.sign(y)))) {
       this.flickYAt = this.frame;
       this.flickYDir = Math.sign(y);
       this.flickYUsed = false;

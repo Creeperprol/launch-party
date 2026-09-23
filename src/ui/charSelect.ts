@@ -236,9 +236,10 @@ export class CharSelectScene implements Scene {
   }
 
   private leave(dev: DeviceId): void {
-    const cur = this.cursors.get(dev);
-    if (!cur) return;
-    const sl = this.s.slots[cur.slot];
+    // Touch players have no menu cursor, so find the slot by device.
+    const idx = this.cursors.get(dev)?.slot ?? this.s.slots.findIndex((s) => s.type === 'human' && s.device === dev);
+    if (idx < 0) return;
+    const sl = this.s.slots[idx];
     sl.type = 'off';
     sl.device = null;
     sl.ready = false;
@@ -447,13 +448,15 @@ export class CharSelectScene implements Scene {
       ctx.stroke();
       ctx.setLineDash([]);
       ctx.restore();
-      label(ctx, `P${i + 1}`, r.x + r.w / 2, r.y + 190, 90, { align: 'center', color: rgba(col, 0.5), stroke: 0 });
-      label(ctx, 'EMPTY', r.x + r.w / 2, r.y + 240, 30, { align: 'center', face: 'ui', weight: 800, color: 'rgba(255,255,255,0.45)' });
+      const tj = this.byId.get(`touchjoin:${i}`);
+      const showTj = !!tj && this.enabled(tj, null);
+      const dy = showTj ? 80 : 0;
+      label(ctx, `P${i + 1}`, r.x + r.w / 2, r.y + 190 + dy, 90, { align: 'center', color: rgba(col, 0.5), stroke: 0 });
+      label(ctx, 'EMPTY', r.x + r.w / 2, r.y + 240 + dy, 30, { align: 'center', face: 'ui', weight: 800, color: 'rgba(255,255,255,0.45)' });
       const tb = this.byId.get(`type:${i}`)!;
       slab(ctx, tb.rect, '#2d2758', { shadow: 4, outline: 4 });
       label(ctx, '+ ADD CPU', tb.rect.x + tb.rect.w / 2, tb.rect.y + 41, 30, { align: 'center', stroke: 6 });
-      const tj = this.byId.get(`touchjoin:${i}`);
-      if (tj && this.enabled(tj, null)) {
+      if (tj && showTj) {
         slab(ctx, tj.rect, '#3b8bff', { shadow: 4, outline: 4 });
         label(ctx, 'PLAY HERE (TOUCH)', tj.rect.x + tj.rect.w / 2, tj.rect.y + 38, 24, { align: 'center', stroke: 5 });
       }
