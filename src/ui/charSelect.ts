@@ -28,6 +28,13 @@ interface Cursor {
 const RULES = ['stocks', 'time'] as const;
 const CARD_Y = 548;
 const CARD_H = 412;
+const ROSTER_COLS = 5;
+const ROSTER_GAP = 20;
+const ROSTER_MARGIN = 60;
+const ROSTER_Y0 = 150;
+const ROSTER_TILE_W = (VIEW_W - 2 * ROSTER_MARGIN - (ROSTER_COLS - 1) * ROSTER_GAP) / ROSTER_COLS;
+const ROSTER_TILE_H = 180;
+const ROSTER_X0 = ROSTER_MARGIN;
 
 export class CharSelectScene implements Scene {
   name = 'charselect';
@@ -57,12 +64,18 @@ export class CharSelectScene implements Scene {
       this.byId.set(e.id, e);
     };
     RULES.forEach((r, i) => add({ id: `rule:${r}`, kind: 'rule', arg: i, rect: { x: 1074 + i * 420, y: 46, w: 380, h: 72 } }));
-    const tw = 330;
-    const gap = 24;
-    const x0 = (VIEW_W - (5 * tw + 4 * gap)) / 2;
-    for (let i = 0; i < 5; i++) {
-      const fi = i < 4 ? i : -1;
-      add({ id: `roster:${fi}`, kind: 'roster', arg: fi, rect: { x: x0 + i * (tw + gap), y: 170, w: tw, h: 300 } });
+    const cols = ROSTER_COLS;
+    const tw = ROSTER_TILE_W;
+    const th = ROSTER_TILE_H;
+    const gap = ROSTER_GAP;
+    const x0 = ROSTER_X0;
+    const y0 = ROSTER_Y0;
+    const total = FIGHTERS.length + 1;
+    for (let i = 0; i < total; i++) {
+      const fi = i < FIGHTERS.length ? i : -1;
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      add({ id: `roster:${fi}`, kind: 'roster', arg: fi, rect: { x: x0 + col * (tw + gap), y: y0 + row * (th + gap), w: tw, h: th } });
     }
     const cw = 420;
     const cg = 30;
@@ -331,8 +344,8 @@ export class CharSelectScene implements Scene {
       label(ctx, ruleText[i], el.rect.x + el.rect.w / 2 + 4, el.rect.y + 50, fs, { align: 'center', stroke: 7 });
     });
     // roster
-    for (let i = 0; i < 5; i++) {
-      const fi = i < 4 ? i : -1;
+    for (let i = 0; i < FIGHTERS.length + 1; i++) {
+      const fi = i < FIGHTERS.length ? i : -1;
       const el = this.byId.get(`roster:${fi}`)!;
       this.drawTile(ctx, el.rect, fi);
     }
@@ -393,8 +406,8 @@ export class CharSelectScene implements Scene {
     const t = this.t;
     if (fi < 0) {
       slab(ctx, r, '#3b3566', { skew: 0.08 });
-      label(ctx, '?', r.x + r.w / 2, r.y + 200, 190, { align: 'center', stroke: 18, color: '#ffe066' });
-      label(ctx, 'RANDOM', r.x + 26, r.y + r.h - 24, 44, { stroke: 10 });
+      label(ctx, '?', r.x + r.w / 2, r.y + r.h / 2 + 40, 110, { align: 'center', stroke: 12, color: '#ffe066' });
+      label(ctx, 'RANDOM', r.x + 18, r.y + r.h - 16, 30, { stroke: 7 });
       return;
     }
     const def = FIGHTERS[fi];
@@ -408,13 +421,13 @@ export class CharSelectScene implements Scene {
     ctx.clip();
     ctx.fillStyle = rgba('#000000', 0.15);
     for (let i = 0; i < 6; i++) ctx.fillRect(r.x + i * 70 - 60 + ((t * 0.3) % 70), r.y, 26, r.h);
-    ctx.translate(r.x + r.w * 0.55, r.y + r.h + 6);
-    const s = def.id === 'grott' ? 2.05 : def.id === 'zip' ? 2.6 : 2.35;
+    ctx.translate(r.x + r.w * 0.72, r.y + r.h + 4);
+    const s = (r.h * 0.82) / def.height;
     ctx.scale(s, s);
     drawFighter(ctx, posedFighter(def, 0, null, 0), { alpha: 1, flash: 0, shakeX: 0, shakeY: 0, t: t + fi * 50 });
     ctx.restore();
-    label(ctx, def.name, r.x + 30, r.y + r.h - 50, 50, { stroke: 11 });
-    label(ctx, def.archetype.toUpperCase(), r.x + 24, r.y + r.h - 20, 22, { face: 'ui', weight: 800, color: pal.light, stroke: 5 });
+    label(ctx, def.name, r.x + 18, r.y + r.h - 40, 32, { stroke: 7 });
+    label(ctx, def.archetype.toUpperCase(), r.x + 16, r.y + r.h - 14, 15, { face: 'ui', weight: 800, color: pal.light, stroke: 4 });
   }
 
   private drawCard(ctx: CanvasRenderingContext2D, i: number): void {
