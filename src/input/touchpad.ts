@@ -1,4 +1,6 @@
 import { VIEW_H, VIEW_W } from '../render/camera';
+import { mix, rgba } from '../render/color';
+import { GLYPH_COLOR, drawGlyph, drawPauseGlyph } from './touchIcons';
 import { clamp } from '../sim/math';
 import { neutralInput, type InputFrame } from '../sim/input';
 
@@ -6,7 +8,7 @@ import { neutralInput, type InputFrame } from '../sim/input';
 export type TouchBtn = 'jump' | 'attack' | 'special' | 'shield' | 'smash';
 
 const BTN_KEYS: readonly TouchBtn[] = ['jump', 'attack', 'special', 'shield', 'smash'];
-const BTN_LABEL: Record<TouchBtn, string> = { jump: 'JUMP', attack: 'ATK', special: 'SPC', shield: 'SH', smash: 'SM' };
+const BTN_LABEL: Record<TouchBtn, string> = { jump: 'JUMP', attack: 'ATTACK', special: 'SPECIAL', shield: 'SHIELD', smash: 'SMASH' };
 /** Touches left of this line that miss every control become a floating joystick. */
 const STICK_ZONE_X = VIEW_W * 0.45;
 
@@ -288,30 +290,46 @@ export class TouchPad {
     ctx.arc(sx, sy, this.stick.r, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = stickActive ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.5)';
+    // direction marks on the ring
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    for (let k = 0; k < 4; k++) {
+      const a = (k * Math.PI) / 2;
+      const cx = sx + Math.cos(a) * (this.stick.r - 16);
+      const cy = sy + Math.sin(a) * (this.stick.r - 16);
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a) * 8, cy + Math.sin(a) * 8);
+      ctx.lineTo(cx + Math.cos(a + 2.3) * 8, cy + Math.sin(a + 2.3) * 8);
+      ctx.lineTo(cx + Math.cos(a - 2.3) * 8, cy + Math.sin(a - 2.3) * 8);
+      ctx.fill();
+    }
+    ctx.fillStyle = stickActive ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.55)';
     ctx.beginPath();
     ctx.arc(sx + this.drawX, sy + this.drawY, 42, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = 'rgba(15,11,31,0.7)';
     ctx.lineWidth = 3;
     ctx.stroke();
-    // buttons
-    ctx.font = '800 22px "Avenir Next", "Futura", "Helvetica Neue", Arial, sans-serif';
+    // buttons: colour-coded face buttons with a glyph and a small caption
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     for (const b of BTN_KEYS) {
       const c = this.buttons[b];
       const pressed = this.held[b];
       const dragging = this.editTarget === c;
-      ctx.fillStyle = pressed ? 'rgba(255,224,102,0.85)' : 'rgba(20,16,40,0.42)';
-      ctx.strokeStyle = dragging ? '#ffe066' : pressed ? 'rgba(20,16,40,0.9)' : 'rgba(255,255,255,0.55)';
-      ctx.lineWidth = 4;
+      const col = GLYPH_COLOR[b];
+      const r = pressed ? c.r * 0.93 : c.r;
+      ctx.fillStyle = pressed ? col : rgba(col, 0.32);
+      ctx.strokeStyle = dragging ? '#ffe066' : pressed ? '#ffffff' : rgba(col, 0.95);
+      ctx.lineWidth = pressed ? 5 : 4;
       ctx.beginPath();
-      ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+      ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-      ctx.fillStyle = pressed ? '#15111f' : 'rgba(255,255,255,0.85)';
-      ctx.fillText(BTN_LABEL[b], c.x, c.y + 1);
+      const fg = pressed ? '#15111f' : '#ffffff';
+      drawGlyph(ctx, b, c.x, c.y - r * 0.14, r * 0.36, fg, pressed ? col : mix(col, '#15111f', 0.55));
+      ctx.font = `800 ${Math.round(r * 0.22)}px "Avenir Next", "Futura", "Helvetica Neue", Arial, sans-serif`;
+      ctx.fillStyle = pressed ? '#15111f' : 'rgba(255,255,255,0.9)';
+      ctx.fillText(BTN_LABEL[b], c.x, c.y + r * 0.58);
     }
     const sh = this.buttons.shield;
     ctx.font = '800 15px "Avenir Next", "Futura", "Helvetica Neue", Arial, sans-serif';
@@ -325,9 +343,7 @@ export class TouchPad {
     ctx.arc(this.pause.x, this.pause.y, this.pause.r, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = this.pauseHeld ? '#15111f' : 'rgba(255,255,255,0.85)';
-    ctx.fillRect(this.pause.x - 9, this.pause.y - 12, 6, 24);
-    ctx.fillRect(this.pause.x + 3, this.pause.y - 12, 6, 24);
+    drawPauseGlyph(ctx, this.pause.x, this.pause.y, 13, this.pauseHeld ? '#15111f' : 'rgba(255,255,255,0.9)');
     ctx.restore();
   }
 }
