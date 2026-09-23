@@ -1,6 +1,7 @@
 import type { App, Scene } from '../app';
 import { FIGHTERS } from '../content/fighters';
 import { DEVICE_IDS, deviceLabel, type DeviceId } from '../input/devices';
+import { isTouchCapable } from '../input/touchpad';
 import { VIEW_W } from '../render/camera';
 import { CPU_GREY, INK, PLAYER_COLORS, mix, rgba } from '../render/color';
 import { drawFighter } from '../render/fighterDraw';
@@ -9,7 +10,7 @@ import { posedFighter } from './poses';
 import { ITEM_LABELS, STOCK_OPTIONS, TIME_OPTIONS, type Session } from './session';
 import { backdrop, focusRing, font, header, hoverRing, inRect, label, roundRectPath, slab, slabPath, type Rect } from './widgets';
 
-type ElKind = 'rule' | 'roster' | 'type' | 'fighter' | 'level' | 'fight';
+type ElKind = 'rule' | 'roster' | 'type' | 'fighter' | 'level' | 'fight' | 'touchjoin';
 
 interface El {
   id: string;
@@ -71,6 +72,7 @@ export class CharSelectScene implements Scene {
       add({ id: `type:${i}`, kind: 'type', arg: i, rect: { x: x + 16, y: CARD_Y + 14, w: cw - 32, h: 58 } });
       add({ id: `fighter:${i}`, kind: 'fighter', arg: i, rect: { x: x + 16, y: CARD_Y + 262, w: cw - 32, h: 62 } });
       add({ id: `level:${i}`, kind: 'level', arg: i, rect: { x: x + 16, y: CARD_Y + 338, w: cw - 32, h: 58 } });
+      if (isTouchCapable()) add({ id: `touchjoin:${i}`, kind: 'touchjoin', arg: i, rect: { x: x + 16, y: CARD_Y + 88, w: cw - 32, h: 54 } });
     }
     add({ id: 'fight', kind: 'fight', arg: 0, rect: { x: 170, y: 976, w: VIEW_W - 340, h: 74 } });
   }
@@ -84,7 +86,7 @@ export class CharSelectScene implements Scene {
 
   /** Can this element be focused / used by this cursor? */
   enabled(e: El, cur: Cursor | null): boolean {
-    const sl = e.kind === 'type' || e.kind === 'fighter' || e.kind === 'level' ? this.s.slots[e.arg] : null;
+    const sl = e.kind === 'type' || e.kind === 'fighter' || e.kind === 'level' || e.kind === 'touchjoin' ? this.s.slots[e.arg] : null;
     switch (e.kind) {
       case 'rule':
       case 'roster':
@@ -95,6 +97,8 @@ export class CharSelectScene implements Scene {
         return !!sl && (sl.type === 'cpu' || (sl.type === 'human' && (!cur || cur.slot === e.arg)));
       case 'level':
         return !!sl && sl.type === 'cpu';
+      case 'touchjoin':
+        return !!sl && sl.type === 'off' && !this.s.slots.some((x) => x.device === 'touch');
       case 'fight':
         return this.s.canStart();
     }
@@ -202,6 +206,15 @@ export class CharSelectScene implements Scene {
         if (sl.type !== 'cpu') break;
         sl.level = ((sl.level - 1 + dir + 9) % 9) + 1;
         app.sfx.menuMove();
+        break;
+      }
+      case 'touchjoin': {
+        const sl = S.slots[e.arg];
+        if (sl.type !== 'off' || this.s.slots.some((x) => x.device === 'touch')) break;
+        sl.type = 'human';
+        sl.device = 'touch';
+        sl.ready = false;
+        app.sfx.menuConfirm();
         break;
       }
       case 'fight':
@@ -346,7 +359,8 @@ export class CharSelectScene implements Scene {
       ctx.font = font(24, 'ui', 700);
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      ctx.fillText('JOIN:  F (Keys 1)  ·  \' (Keys 2)  ·  A (gamepad)      ADD CPU: select an empty card      PICK: select a fighter', VIEW_W / 2, 1024);
+      const touchHint = isTouchCapable() ? '  ·  tap PLAY HERE (TOUCH) on a card' : '';
+      ctx.fillText(`JOIN:  F (Keys 1)  ·  ' (Keys 2)  ·  A (gamepad)${touchHint}      ADD CPU: select an empty card      PICK: select a fighter`, VIEW_W / 2, 1024);
     }
     // mouse hover + player focus rings
     if (this.hover) hoverRing(ctx, this.hover.rect);
@@ -427,6 +441,11 @@ export class CharSelectScene implements Scene {
       const tb = this.byId.get(`type:${i}`)!;
       slab(ctx, tb.rect, '#2d2758', { shadow: 4, outline: 4 });
       label(ctx, '+ ADD CPU', tb.rect.x + tb.rect.w / 2, tb.rect.y + 41, 30, { align: 'center', stroke: 6 });
+      const tj = this.byId.get(`touchjoin:${i}`);
+      if (tj && this.enabled(tj, null)) {
+        slab(ctx, tj.rect, '#3b8bff', { shadow: 4, outline: 4 });
+        label(ctx, 'PLAY HERE (TOUCH)', tj.rect.x + tj.rect.w / 2, tj.rect.y + 38, 24, { align: 'center', stroke: 5 });
+      }
       return;
     }
     const cpu = sl.type === 'cpu';

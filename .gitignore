@@ -4,3 +4,4 @@ dist
 *.log
 docs/screens/
 .playwright-mcp/
+.vercel

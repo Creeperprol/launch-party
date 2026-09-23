@@ -46,7 +46,7 @@ export function keyLabel(code: string): string {
 /** Keys the game owns (prevent page scrolling / browser find). */
 export const GAME_KEYS: ReadonlySet<string> = new Set([
   ...LAYOUTS.flatMap((l) => [l.up, l.down, l.left, l.right, l.jump, l.attack, l.special, l.shield, l.grab, l.smash]),
-  'Enter', 'Escape', 'Backquote', 'KeyM', 'Tab',
+  'Enter', 'Escape', 'Backquote', 'KeyM', 'KeyP', 'Tab',
 ]);
 
 /** Tracks key state with tap capture (a press+release between ticks still counts for one tick). */

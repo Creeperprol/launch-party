@@ -23,6 +23,7 @@ export class MatchRenderer {
   swoosh = new Swooshes();
   t = 0;
   debug = false;
+  showFps = false;
   players: PlayerInfo[];
   hudShake: number[];
   lastPercent: number[];
@@ -153,16 +154,14 @@ export class MatchRenderer {
       ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     }
     drawHud(ctx, m, this);
-    if (this.debug) {
-      drawDebugLabels(ctx, m, (x, y) => cam.toScreen(x, y));
-      if (perf) {
-        ctx.fillStyle = 'rgba(0,0,0,0.65)';
-        ctx.fillRect(16, 16, 460, 34);
-        ctx.fillStyle = '#9ff7c0';
-        ctx.font = '600 20px ui-monospace, Menlo, monospace';
-        ctx.textAlign = 'left';
-        ctx.fillText(perf, 26, 40);
-      }
+    if (this.debug) drawDebugLabels(ctx, m, (x, y) => cam.toScreen(x, y));
+    if ((this.debug || this.showFps) && perf) {
+      ctx.fillStyle = 'rgba(0,0,0,0.65)';
+      ctx.fillRect(16, 16, 460, 34);
+      ctx.fillStyle = '#9ff7c0';
+      ctx.font = '600 20px ui-monospace, Menlo, monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(perf, 26, 40);
     }
   }
 

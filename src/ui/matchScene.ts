@@ -53,6 +53,7 @@ export class MatchScene implements Scene {
   banner: Banner | null = null;
   private onExit: (r: MatchResult | 'quit') => void;
   private tickCount = 0;
+  private usesTouch = false;
 
   constructor(cfg: MatchConfig, onExit: (r: MatchResult | 'quit') => void) {
     this.cfg = cfg;
@@ -65,10 +66,12 @@ export class MatchScene implements Scene {
     });
     this.renderer = new MatchRenderer(this.match, cfg.slots.map((s) => ({ slot: s.slot, cpu: s.cpu, name: s.fighter.name })));
     this.cpus = cfg.slots.map((s, i) => (s.cpu > 0 ? new CpuController(i, s.cpu, cfg.seed * 31 + i * 7919) : null));
+    this.usesTouch = cfg.slots.some((s) => s.device === 'touch');
   }
 
   update(app: App): void {
     const d = app.devices;
+    d.touch.setActive(this.usesTouch && this.match.phase !== 'ended' && !this.paused);
     const pauseReq = d.globalBack || this.cfg.slots.some((s) => s.device && d.pausePressed(s.device));
     if (this.match.phase === 'ended') {
       this.stepSim(app);
@@ -196,7 +199,9 @@ export class MatchScene implements Scene {
 
   render(ctx: CanvasRenderingContext2D, app: App): void {
     this.renderer.debug = app.debug;
+    this.renderer.showFps = app.showFps;
     this.renderer.draw(ctx, this.match, app.perfText());
+    app.devices.touch.draw(ctx);
     if (this.banner) this.drawBanner(ctx, this.banner);
     if (this.paused) this.drawPause(ctx);
   }

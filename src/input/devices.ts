@@ -2,8 +2,9 @@ import type { InputFrame } from '../sim/input';
 import { neutralInput } from '../sim/input';
 import { mapGamepad, padMenuHeld, type GamepadLike, type MenuPress } from './gamepad';
 import { GAME_KEYS, KB1, KB2, Keyboard, type KeyLayout } from './keyboard';
+import { isTouchCapable, TouchPad } from './touchpad';
 
-export type DeviceId = 'kb1' | 'kb2' | 'pad0' | 'pad1' | 'pad2' | 'pad3';
+export type DeviceId = 'kb1' | 'kb2' | 'pad0' | 'pad1' | 'pad2' | 'pad3' | 'touch';
 
 export interface MenuEdges extends MenuPress {}
 
@@ -22,6 +23,7 @@ export interface MouseState {
 export class Devices {
   kb = new Keyboard();
   pads: (GamepadLike | null)[] = [null, null, null, null];
+  touch = new TouchPad();
   private held = new Map<string, MenuPress>();
   private edges = new Map<string, MenuPress>();
   private repeat = new Map<string, number>();
@@ -65,6 +67,7 @@ export class Devices {
       this.mouse.wheel += Math.sign(e.deltaY);
       e.preventDefault();
     }, { passive: false });
+    this.touch.attach(canvas, (cx, cy) => this.toLogical(cx, cy));
   }
 
   get canvasEl(): HTMLCanvasElement | null {
@@ -126,10 +129,12 @@ export class Devices {
 
   connected(id: DeviceId): boolean {
     if (id === 'kb1' || id === 'kb2') return true;
+    if (id === 'touch') return isTouchCapable();
     return !!this.pads[Number(id.slice(3))];
   }
 
   frame(id: DeviceId): InputFrame {
+    if (id === 'touch') return this.touch.frame();
     const L = this.layout(id);
     if (L) return this.kb.frame(L);
     const p = this.pads[Number(id.slice(3))];
@@ -140,12 +145,14 @@ export class Devices {
   joinPressed(id: DeviceId): boolean {
     const L = this.layout(id);
     if (L) return this.kb.pressed(L.attack) || this.kb.pressed(L.jump);
+    if (id === 'touch') return false;
     const e = this.edges.get(id);
     return !!e && (e.confirm || e.start);
   }
 
   pausePressed(id: DeviceId): boolean {
     if (id === 'kb1' || id === 'kb2') return false;
+    if (id === 'touch') return this.touch.consumePause();
     return !!this.edges.get(id)?.start;
   }
 
@@ -162,5 +169,6 @@ export const DEVICE_IDS: readonly DeviceId[] = ['kb1', 'kb2', 'pad0', 'pad1', 'p
 export function deviceLabel(id: DeviceId): string {
   if (id === 'kb1') return 'KEYS 1';
   if (id === 'kb2') return 'KEYS 2';
+  if (id === 'touch') return 'TOUCH';
   return `PAD ${Number(id.slice(3)) + 1}`;
 }

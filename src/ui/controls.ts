@@ -21,7 +21,7 @@ const TIPS = [
   'Specials: special + neutral / side / up / down.  Up special recovers — then you fall helpless until you land or grab a ledge.',
   'Shield + left/right rolls, shield + down spot-dodges, shield in the air air-dodges.  Shield just before landing in tumble to tech.',
   'Grab (or shield + attack) → attack to pummel, direction to throw.  On a ledge: toward/up climbs, jump, shield rolls, attack attacks.',
-  'Knock foes past the blast zones to take a stock. Higher damage % means bigger launches.   Global: ` debug overlay · M mute.',
+  'Knock foes past the blast zones to take a stock. Higher damage % means bigger launches.   Global: ` debug overlay · P fps only · M mute.',
 ];
 
 export class ControlsScene implements Scene {
@@ -81,6 +81,6 @@ export class ControlsScene implements Scene {
     slab(ctx, this.back, this.hoverBack ? '#ffe066' : '#3b3566', { shadow: 6 });
     label(ctx, 'BACK', this.back.x + this.back.w / 2 + 6, this.back.y + 56, 44, { align: 'center', color: this.hoverBack ? INK : '#fff' });
     if (this.hoverBack) hoverRing(ctx, this.back);
-    hints(ctx, [[['Esc', 'G', ';'], 'back'], [['M'], 'mute'], [['`'], 'debug overlay']]);
+    hints(ctx, [[['Esc', 'G', ';'], 'back'], [['M'], 'mute'], [['`'], 'debug overlay'], [['P'], 'fps only']]);
   }
 }

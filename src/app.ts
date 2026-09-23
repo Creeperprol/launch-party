@@ -1,5 +1,6 @@
 import { Sfx } from './audio/sfx';
 import { Devices } from './input/devices';
+import { isTouchCapable } from './input/touchpad';
 import { VIEW_H, VIEW_W } from './render/camera';
 
 export interface Scene {
@@ -16,12 +17,15 @@ export class App {
   sfx = new Sfx();
   scene: Scene;
   debug = false;
+  /** FPS counter only, independent of the full hitbox/state debug overlay. */
+  showFps = false;
   tick = 0;
   private acc = 0;
   private last = 0;
   private scale = 1;
   private offX = 0;
   private offY = 0;
+  private rotateT = 0;
   perf = { update: 0, render: 0, fps: 60, samples: [] as number[], frameTimes: [] as number[] };
 
   constructor(canvas: HTMLCanvasElement, first: Scene) {
@@ -34,8 +38,11 @@ export class App {
       return [((cx - r.left) / r.width) * VIEW_W, ((cy - r.top) / r.height) * VIEW_H];
     };
     window.addEventListener('resize', () => this.resize());
+    window.addEventListener('orientationchange', () => setTimeout(() => this.resize(), 60));
     window.addEventListener('keydown', (e) => {
+      if (e.repeat) return;
       if (e.code === 'Backquote') this.debug = !this.debug;
+      if (e.code === 'KeyP' && !e.metaKey && !e.ctrlKey) this.showFps = !this.showFps;
       if (e.code === 'KeyM' && !e.metaKey && !e.ctrlKey) this.sfx.toggleMute();
       this.sfx.unlock();
     });
@@ -122,12 +129,52 @@ export class App {
     ctx.restore();
   }
 
+  private needsRotate(): boolean {
+    return isTouchCapable() && window.innerHeight > window.innerWidth;
+  }
+
+  private drawRotatePrompt(ctx: CanvasRenderingContext2D): void {
+    ctx.fillStyle = '#07060d';
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    const cx = VIEW_W / 2;
+    const cy = VIEW_H / 2;
+    ctx.save();
+    ctx.translate(cx, cy - 140);
+    ctx.rotate((-90 * Math.PI) / 180 + Math.sin(this.rotateT * 0.05) * 0.12);
+    ctx.strokeStyle = '#ffe066';
+    ctx.lineWidth = 10;
+    ctx.strokeRect(-70, -120, 140, 240);
+    ctx.fillStyle = '#ffe066';
+    ctx.beginPath();
+    ctx.arc(0, 100, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.font = '900 italic 64px "Avenir Next Condensed", "Futura", "Arial Narrow", "Arial Black", sans-serif';
+    ctx.fillText('ROTATE YOUR DEVICE', cx, cy + 90);
+    ctx.font = '600 28px "Avenir Next", "Futura", "Helvetica Neue", Arial, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.fillText('LAUNCH PARTY plays in landscape', cx, cy + 140);
+  }
+
   start(): void {
     this.canvas.focus();
     this.last = performance.now();
     const frame = (now: number) => {
       const dt = Math.min(100, now - this.last);
       this.last = now;
+      if (this.needsRotate()) {
+        this.rotateT++;
+        this.acc = 0;
+        this.devices.poll();
+        this.devices.endTick();
+        const ctx = this.ctx;
+        ctx.setTransform(this.scale, 0, 0, this.scale, this.offX, this.offY);
+        this.drawRotatePrompt(ctx);
+        requestAnimationFrame(frame);
+        return;
+      }
       this.acc += dt;
       const step = 1000 / 60;
       const t0 = performance.now();

@@ -96,7 +96,7 @@ export class TitleScene implements Scene {
     ctx.font = font(18, 'ui', 600);
     ctx.fillStyle = 'rgba(255,255,255,0.55)';
     ctx.textAlign = 'right';
-    ctx.fillText('An original platform fighter · M to mute · ` debug overlay', VIEW_W - 30, VIEW_H - 24);
+    ctx.fillText('An original platform fighter · M to mute · ` debug overlay · P fps', VIEW_W - 30, VIEW_H - 24);
   }
 }
 
