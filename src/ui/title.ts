@@ -54,7 +54,7 @@ export class TitleScene implements Scene {
     ctx.restore();
     // fighters in action
     const xs = [330, 790, 1170, 1600];
-    FIGHTERS.forEach((def, i) => {
+    FIGHTERS.slice(0, xs.length).forEach((def, i) => {
       const [mv, fr, air] = SHOWCASE[i];
       const f = posedFighter(def, 0, mv, fr, air);
       const bob = Math.sin(t * 0.05 + i * 1.7) * 8;
