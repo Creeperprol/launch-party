@@ -144,9 +144,9 @@ export function drawFighter(ctx: CanvasRenderingContext2D, f: Fighter, o: DrawOp
   disc(ctx, P.hdB, r.handR, mix(handColor(c), INK, LIMB_DARK));
   line(ctx, [P.hipB, P.knB, P.ftB], legW, mix(legMain, INK, LIMB_DARK));
   footShape(ctx, c, P.ftB, P.knB, false, mix(footColor(c), INK, LIMB_DARK));
-  // back-hand item (not swinging)
-  if (it && !itemSwing) drawHeldItem(ctx, it, P.hdB, 70 + Math.sin(o.t * 0.1) * 4);
   torso(ctx, c);
+  // back-hand item (not swinging) hangs in front of the body so it stays readable
+  if (it && !itemSwing) drawHeldItem(ctx, it, P.hdB, -100 + Math.sin(o.t * 0.1) * 5);
   line(ctx, [P.hipF, P.knF, P.ftF], legW, legMain);
   footShape(ctx, c, P.ftF, P.knF, false, footColor(c));
   headShape(ctx, c, false);
