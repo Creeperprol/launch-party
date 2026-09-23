@@ -202,7 +202,7 @@ export const CINDER: FighterDef = {
   doubleJumpV: 13.3,
   jumps: 1,
   rig,
-  look: 'nova',
+  look: 'cinder',
   palettes: [
     { main: '#ff5a2a', dark: '#a8320f', light: '#ffc890', accent: '#ffe066', skin: '#f3c9a0', eye: '#2a1810' },
     { main: '#ff2a6a', dark: '#a8123f', light: '#ffb0d0', accent: '#66e0ff', skin: '#f3c9a0', eye: '#2a1810' },

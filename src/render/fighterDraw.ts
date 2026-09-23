@@ -1,79 +1,9 @@
-import type { Palette, Rig } from '../sim/defs';
+import type { Palette } from '../sim/defs';
 import type { Fighter } from '../sim/fighter';
 import type { V2 } from '../sim/math';
-import type { Resolved } from '../sim/pose';
 import { INK, mix } from './color';
-
-const OUT = 2.8;
-
-interface LookCtx {
-  f: Fighter;
-  P: Resolved;
-  r: Rig;
-  pal: Palette;
-  t: number;
-  /** Forward speed (u/frame). */
-  sp: number;
-  /** Body up / forward unit vectors. */
-  U: V2;
-  F: V2;
-  HU: V2;
-  HF: V2;
-  flash: number;
-}
-
-function norm(x: number, y: number): V2 {
-  const l = Math.hypot(x, y) || 1;
-  return { x: x / l, y: y / l };
-}
-
-/** Head-space point: u along head-forward, v along head-up, in units of the head radius. */
-function hp(c: LookCtx, u: number, v: number): V2 {
-  const hr = c.r.headR;
-  return { x: c.P.head.x + c.HF.x * u * hr + c.HU.x * v * hr, y: c.P.head.y + c.HF.y * u * hr + c.HU.y * v * hr };
-}
-
-function line(ctx: CanvasRenderingContext2D, pts: V2[], w: number, color: string): void {
-  ctx.strokeStyle = color;
-  ctx.lineWidth = w;
-  ctx.beginPath();
-  ctx.moveTo(pts[0].x, pts[0].y);
-  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
-  ctx.stroke();
-}
-
-function disc(ctx: CanvasRenderingContext2D, p: V2, r: number, color: string): void {
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.arc(p.x, p.y, Math.max(0.1, r), 0, Math.PI * 2);
-  ctx.fill();
-}
-
-function poly(ctx: CanvasRenderingContext2D, pts: V2[], fill: string, outline = true): void {
-  ctx.beginPath();
-  ctx.moveTo(pts[0].x, pts[0].y);
-  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
-  ctx.closePath();
-  if (outline) {
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = OUT * 2;
-    ctx.stroke();
-  }
-  ctx.fillStyle = fill;
-  ctx.fill();
-}
-
-function ellipse(ctx: CanvasRenderingContext2D, c: V2, rx: number, ry: number, rot: number, fill: string, outline: number): void {
-  ctx.beginPath();
-  ctx.ellipse(c.x, c.y, Math.max(0.1, rx), Math.max(0.1, ry), rot, 0, Math.PI * 2);
-  if (outline > 0) {
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = outline;
-    ctx.stroke();
-  }
-  ctx.fillStyle = fill;
-  ctx.fill();
-}
+import { OUT, disc, ellipse, hp, line, norm, poly, type Look, type LookCtx } from './lookKit';
+import { LOOKS } from './looks';
 
 function tintPal(p: Palette, k: number, to = '#ffffff'): Palette {
   if (k <= 0) return p;
@@ -118,6 +48,12 @@ export function drawFighter(ctx: CanvasRenderingContext2D, f: Fighter, o: DrawOp
   const armW = r.limbR * 2;
   const legW = r.limbR * 2.5;
   const look = f.def.look;
+  const L = LOOKS[look];
+  if (L) {
+    drawCustom(ctx, c, L, armW, legW);
+    ctx.restore();
+    return;
+  }
 
   // ---- pass 1: silhouette outline
   behindExtras(ctx, c, true);
@@ -156,6 +92,42 @@ export function drawFighter(ctx: CanvasRenderingContext2D, f: Fighter, o: DrawOp
   ctx.restore();
 }
 
+/** Same two-pass structure as the built-in looks, with every part supplied by the Look. */
+function drawCustom(ctx: CanvasRenderingContext2D, c: LookCtx, L: Look, armW: number, legW: number): void {
+  const { P, r } = c;
+  // ---- pass 1: silhouette outline
+  L.behind?.(ctx, c, true);
+  line(ctx, [P.shB, P.elB, P.hdB], armW + OUT * 2, INK);
+  disc(ctx, P.hdB, r.handR + OUT, INK);
+  line(ctx, [P.hipB, P.knB, P.ftB], legW + OUT * 2, INK);
+  footShape(ctx, c, P.ftB, P.knB, true, INK);
+  line(ctx, [P.hip, P.neck], r.bodyR * 2 + OUT * 2, INK);
+  line(ctx, [P.hipF, P.knF, P.ftF], legW + OUT * 2, INK);
+  footShape(ctx, c, P.ftF, P.knF, true, INK);
+  L.head(ctx, c, true);
+  line(ctx, [P.shF, P.elF, P.hdF], armW + OUT * 2, INK);
+  disc(ctx, P.hdF, r.handR + OUT, INK);
+  // ---- pass 2: fills, back to front
+  L.behind?.(ctx, c, false);
+  const arm = L.arm(c);
+  const leg = L.leg(c);
+  line(ctx, [P.shB, P.elB, P.hdB], armW, mix(arm, INK, LIMB_DARK));
+  disc(ctx, P.hdB, r.handR, mix(L.hand(c), INK, LIMB_DARK));
+  line(ctx, [P.hipB, P.knB, P.ftB], legW, mix(leg, INK, LIMB_DARK));
+  footShape(ctx, c, P.ftB, P.knB, false, mix(L.foot(c), INK, LIMB_DARK));
+  L.torso(ctx, c);
+  line(ctx, [P.hipF, P.knF, P.ftF], legW, leg);
+  footShape(ctx, c, P.ftF, P.knF, false, L.foot(c));
+  L.head(ctx, c, false);
+  L.face?.(ctx, c);
+  L.front?.(ctx, c);
+  line(ctx, [P.shF, P.elF, P.hdF], armW + OUT * 1.4, INK);
+  line(ctx, [P.shF, P.elF, P.hdF], armW, arm);
+  disc(ctx, P.hdF, r.handR + OUT * 0.7, INK);
+  disc(ctx, P.hdF, r.handR, L.hand(c));
+  if (!(c.f.move && c.f.move.def.hideWeapon)) L.held?.(ctx, c);
+}
+
 function handColor(c: LookCtx): string {
   switch (c.f.def.look) {
     case 'nova':
@@ -164,7 +136,7 @@ function handColor(c: LookCtx): string {
       return mix(c.pal.skin, '#000000', 0.08);
     case 'zip':
       return c.pal.light;
-    case 'sable':
+    default:
       return mix(c.pal.dark, INK, 0.2);
   }
 }
@@ -177,7 +149,7 @@ function footColor(c: LookCtx): string {
       return mix(c.pal.skin, INK, 0.2);
     case 'zip':
       return c.pal.accent;
-    case 'sable':
+    default:
       return mix(c.pal.dark, INK, 0.45);
   }
 }

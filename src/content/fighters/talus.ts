@@ -226,7 +226,7 @@ export const TALUS: FighterDef = {
   doubleJumpV: 13.5,
   jumps: 1,
   rig,
-  look: 'grott',
+  look: 'talus',
   palettes: [
     { main: '#8a8478', dark: '#524e46', light: '#d8d2c4', accent: '#ff9a3a', skin: '#6a6458', eye: '#ffe066' },
     { main: '#5a6a7a', dark: '#2e3944', light: '#a8bcc8', accent: '#ff5a5a', skin: '#48545e', eye: '#66e0ff' },

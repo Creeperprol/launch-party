@@ -8,9 +8,9 @@ import { drawFighter } from '../render/fighterDraw';
 import type { Flow } from './flow';
 import { posedFighter } from './poses';
 import { STOCK_OPTIONS, TIME_OPTIONS, type Session } from './session';
-import { backdrop, focusRing, font, header, hoverRing, inRect, label, roundRectPath, slab, slabPath, type Rect } from './widgets';
+import { backButton, backdrop, focusRing, font, header, hoverRing, inRect, label, roundRectPath, slab, slabPath, type Rect } from './widgets';
 
-type ElKind = 'rule' | 'roster' | 'type' | 'fighter' | 'level' | 'fight' | 'touchjoin';
+type ElKind = 'rule' | 'roster' | 'type' | 'fighter' | 'level' | 'fight' | 'touchjoin' | 'back';
 
 interface El {
   id: string;
@@ -87,7 +87,8 @@ export class CharSelectScene implements Scene {
       add({ id: `level:${i}`, kind: 'level', arg: i, rect: { x: x + 16, y: CARD_Y + 338, w: cw - 32, h: 58 } });
       if (isTouchCapable()) add({ id: `touchjoin:${i}`, kind: 'touchjoin', arg: i, rect: { x: x + 16, y: CARD_Y + 88, w: cw - 32, h: 54 } });
     }
-    add({ id: 'fight', kind: 'fight', arg: 0, rect: { x: 170, y: 976, w: VIEW_W - 340, h: 74 } });
+    add({ id: 'fight', kind: 'fight', arg: 0, rect: { x: 250, y: 976, w: VIEW_W - 420, h: 74 } });
+    add({ id: 'back', kind: 'back', arg: 0, rect: { x: 24, y: 976, w: 200, h: 74 } });
   }
 
   cardRect(i: number): Rect {
@@ -103,6 +104,7 @@ export class CharSelectScene implements Scene {
     switch (e.kind) {
       case 'rule':
       case 'roster':
+      case 'back':
         return true;
       case 'type':
         return !!sl && (sl.type !== 'human' || !cur || cur.slot === e.arg);
@@ -231,6 +233,10 @@ export class CharSelectScene implements Scene {
       }
       case 'fight':
         this.start(app);
+        break;
+      case 'back':
+        app.sfx.menuBack();
+        this.flow.menu();
         break;
     }
   }
@@ -365,15 +371,22 @@ export class CharSelectScene implements Scene {
       g.addColorStop(0.5, '#ffb03b');
       g.addColorStop(1, '#ff3b4f');
       slab(ctx, fight.rect, g, { shadow: 10 });
-      label(ctx, 'ALL SET — PRESS ENTER / START', fight.rect.x + fight.rect.w / 2, fight.rect.y + 55, 50, { align: 'center', stroke: 12 });
+      label(ctx, isTouchCapable() ? 'ALL SET — TAP TO FIGHT!' : 'ALL SET — PRESS ENTER / START', fight.rect.x + fight.rect.w / 2, fight.rect.y + 55, 50, { align: 'center', stroke: 12 });
       ctx.restore();
     } else {
+      const touchHint = isTouchCapable() ? '  ·  tap PLAY HERE (TOUCH) on a card' : '';
+      const hint = `JOIN:  F (Keys 1)  ·  ' (Keys 2)  ·  A (gamepad)${touchHint}      ADD CPU: select an empty card      PICK: select a fighter`;
+      const left = 250;
+      const room = VIEW_W - left - 30;
       ctx.font = font(24, 'ui', 700);
+      const size = Math.min(24, Math.floor((24 * room) / ctx.measureText(hint).width));
+      ctx.font = font(size, 'ui', 700);
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      const touchHint = isTouchCapable() ? '  ·  tap PLAY HERE (TOUCH) on a card' : '';
-      ctx.fillText(`JOIN:  F (Keys 1)  ·  ' (Keys 2)  ·  A (gamepad)${touchHint}      ADD CPU: select an empty card      PICK: select a fighter`, VIEW_W / 2, 1024);
+      ctx.fillText(hint, left + room / 2, 1024);
     }
+    const back = this.byId.get('back')!;
+    backButton(ctx, back.rect, this.hover === back);
     // mouse hover + player focus rings
     if (this.hover) hoverRing(ctx, this.hover.rect);
     const focusMap = new Map<string, number[]>();

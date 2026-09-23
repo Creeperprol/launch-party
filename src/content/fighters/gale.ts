@@ -132,7 +132,7 @@ export const GALE: FighterDef = {
   doubleJumpV: 12.4,
   jumps: 2,
   rig,
-  look: 'zip',
+  look: 'gale',
   palettes: [
     { main: '#8ad8ff', dark: '#3a7ea8', light: '#e0f6ff', accent: '#ffe066', skin: '#f3c9a0', eye: '#2a1810' },
     { main: '#c0ffb0', dark: '#5aa848', light: '#eaffe0', accent: '#ff9ad8', skin: '#e0b088', eye: '#2a1810' },

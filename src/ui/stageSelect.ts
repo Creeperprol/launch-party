@@ -7,7 +7,7 @@ import type { StageDef } from '../sim/defs';
 import { StageRT } from '../sim/stage';
 import type { Flow } from './flow';
 import { menuIn } from './menuInput';
-import { backdrop, font, header, hints, hoverRing, inRect, label, slab, slabPath, type Rect } from './widgets';
+import { backButton, backdrop, font, header, hints, hoverRing, inRect, label, slab, slabPath, type Rect } from './widgets';
 
 const shots = new Map<string, HTMLCanvasElement>();
 
@@ -45,6 +45,8 @@ export class StageSelectScene implements Scene {
   sel: number;
   hover = -1;
   cards: Card[] = [];
+  backRect: Rect = { x: 1650, y: 44, w: 230, h: 74 };
+  hoverBack = false;
   private flow: Flow;
 
   constructor(flow: Flow) {
@@ -75,6 +77,12 @@ export class StageSelectScene implements Scene {
     if (inp.up && this.sel === 3) {
       this.sel = 1;
       app.sfx.menuMove();
+    }
+    this.hoverBack = inRect(this.backRect, m.x, m.y);
+    if (m.clicked && this.hoverBack) {
+      app.sfx.menuBack();
+      this.flow.charSelect();
+      return;
     }
     let go = inp.confirm || d.globalConfirm;
     if (m.clicked && this.hover >= 0) {
@@ -143,6 +151,7 @@ export class StageSelectScene implements Scene {
       }
       if (this.hover === i) hoverRing(ctx, r, c.idx >= 0 ? 0.06 : undefined);
     });
+    backButton(ctx, this.backRect, this.hoverBack);
     hints(ctx, [[['A', 'D'], 'or'], [['←', '→'], 'choose'], [['F', "'", 'Enter'], 'fight!'], [['Esc', 'G', ';'], 'back']]);
   }
 }

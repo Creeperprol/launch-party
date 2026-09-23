@@ -147,12 +147,12 @@ export const RAVEN: FighterDef = {
   doubleJumpV: 13.0,
   jumps: 1,
   rig,
-  look: 'sable',
+  look: 'raven',
   palettes: [
-    { main: '#2a2a3a', dark: '#0f0f18', light: '#8888a0', accent: '#ff4a6a', skin: '#e0c0a0', eye: '#ff4a6a' },
-    { main: '#3a1a2a', dark: '#180a12', light: '#a86888', accent: '#ffd85a', skin: '#d0a888', eye: '#ffd85a' },
-    { main: '#1a2a3a', dark: '#0a1218', light: '#688aa8', accent: '#5affd8', skin: '#e0c0a0', eye: '#5affd8' },
-    { main: '#2a3a1a', dark: '#121808', light: '#88a868', accent: '#ff8a5a', skin: '#d0b088', eye: '#ff8a5a' },
+    { main: '#40405e', dark: '#1e1e30', light: '#9a9ab8', accent: '#ff4a6a', skin: '#e0c0a0', eye: '#ff4a6a' },
+    { main: '#5a2a44', dark: '#2a1020', light: '#c888a8', accent: '#ffd85a', skin: '#d0a888', eye: '#ffd85a' },
+    { main: '#2a4460', dark: '#12202e', light: '#88aac8', accent: '#5affd8', skin: '#e0c0a0', eye: '#5affd8' },
+    { main: '#3e5428', dark: '#1a2610', light: '#a8c888', accent: '#ff8a5a', skin: '#d0b088', eye: '#ff8a5a' },
   ],
   moves: {
     ...commonMoves(rig, W, H),

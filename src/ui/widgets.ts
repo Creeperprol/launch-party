@@ -47,6 +47,12 @@ export function slab(ctx: CanvasRenderingContext2D, r: Rect, fill: string | Canv
   ctx.fill();
 }
 
+/** Tappable BACK block (touch players have no Esc key). */
+export function backButton(ctx: CanvasRenderingContext2D, r: Rect, hot: boolean): void {
+  slab(ctx, r, hot ? '#ffe066' : '#3b3566', { shadow: 6, outline: 5 });
+  label(ctx, '◀ BACK', r.x + r.w / 2 + 4, r.y + r.h / 2 + 13, 36, { align: 'center', stroke: hot ? 0 : 8, color: hot ? INK : '#ffffff' });
+}
+
 export type Face = 'display' | 'ui';
 
 export function font(size: number, face: Face = 'display', weight = 900): string {

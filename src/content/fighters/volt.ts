@@ -152,7 +152,7 @@ export const VOLT: FighterDef = {
   doubleJumpV: 12.8,
   jumps: 1,
   rig,
-  look: 'zip',
+  look: 'volt',
   palettes: [
     { main: '#ffe066', dark: '#a89424', light: '#fff5c0', accent: '#2ab0ff', skin: '#f3c9a0', eye: '#2a1810' },
     { main: '#66e0ff', dark: '#2494a8', light: '#c0f5ff', accent: '#ff5a8a', skin: '#e0b088', eye: '#2a1810' },
