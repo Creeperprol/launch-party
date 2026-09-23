@@ -559,6 +559,40 @@ export class Match {
     return false;
   }
 
+  /**
+   * Smallest distance to any blast zone along a ballistic launch (negative = KO), used by CPUs to pick DI.
+   * The trajectory stops when it lands on the main stage.
+   */
+  launchMargin(v: Fighter, angle: number, speed: number): number {
+    const B = this.stage.blast;
+    const M = this.stage.main;
+    let x = v.x;
+    let y = v.y - v.H / 2;
+    let kx = Math.cos(angle) * speed;
+    let ky = -Math.sin(angle) * speed;
+    let vy = 0;
+    const tumble = speed / LAUNCH_SCALE > TUMBLE_KB;
+    let margin = Infinity;
+    for (let t = 0; t < 360; t++) {
+      vy = Math.min(v.def.fallSpeed, vy + v.def.gravity);
+      const mag = Math.hypot(kx, ky);
+      const nm = Math.max(0, mag - KB_DECAY);
+      if (mag > 0) {
+        kx *= nm / mag;
+        ky *= nm / mag;
+      }
+      const py = y;
+      x += kx;
+      y += ky + vy;
+      const top = tumble ? y - B.top : Infinity;
+      margin = Math.min(margin, x - B.left, B.right - x, B.bottom - y, top);
+      const feet = y + v.H / 2;
+      if (py + v.H / 2 <= M.top && feet >= M.top && x >= M.x1 && x <= M.x2) break;
+      if (nm === 0) break;
+    }
+    return margin;
+  }
+
   // ------------------------------------------------------------------ grabs
 
   catchGrab(a: Fighter, v: Fighter, command?: string): void {
