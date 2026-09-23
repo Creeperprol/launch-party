@@ -1,0 +1,22 @@
+{
+  "name": "launch-party",
+  "version": "0.1.0",
+  "description": "LAUNCH PARTY — an original browser platform fighter",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "sim": "tsx scripts/sim.ts"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1"
+  },
+  "private": true
+}
