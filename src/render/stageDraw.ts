@@ -124,22 +124,26 @@ export function drawBackground(ctx: CanvasRenderingContext2D, st: StageRT, cam: 
     const g = ctx.createRadialGradient(x - 60, y - 60, 20, x, y, 190);
     g.addColorStop(0, '#ffb3d9');
     g.addColorStop(1, '#5a1f7a');
+    ctx.strokeStyle = 'rgba(255,220,250,0.4)';
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.ellipse(x, y, 300, 58, -0.35, Math.PI, Math.PI * 2);
+    ctx.stroke();
     ctx.fillStyle = g;
     ctx.beginPath();
     ctx.arc(x, y, 170, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(255,220,250,0.55)';
-    ctx.lineWidth = 10;
+    ctx.strokeStyle = 'rgba(255,220,250,0.6)';
     ctx.beginPath();
-    ctx.ellipse(x, y, 300, 58, -0.35, 0, Math.PI * 2);
+    ctx.ellipse(x, y, 300, 58, -0.35, 0, Math.PI);
     ctx.stroke();
     // drifting debris
     for (let i = 0; i < 14; i++) {
       const dx = ((i * 211 + px(0.3) + t * 0.2) % 2300 + 2300) % 2300 - 200;
       const dy = 200 + hash(i + 40) * 700 + py(0.3);
-      ctx.fillStyle = '#2a2448';
+      ctx.fillStyle = 'rgba(120,110,170,0.35)';
       ctx.beginPath();
-      ctx.arc(dx, dy, 6 + hash(i) * 14, 0, Math.PI * 2);
+      ctx.arc(dx, dy, 4 + hash(i) * 9, 0, Math.PI * 2);
       ctx.fill();
     }
   } else {
