@@ -28,8 +28,9 @@ interface Cursor {
 const RULES = ['stocks', 'time'] as const;
 const CARD_Y = 548;
 const CARD_H = 412;
-const ROSTER_COLS = 5;
-const ROSTER_GAP = 20;
+const ROSTER_ROWS = 2;
+const ROSTER_COLS = Math.ceil((FIGHTERS.length + 1) / ROSTER_ROWS);
+const ROSTER_GAP = 14;
 const ROSTER_MARGIN = 60;
 const ROSTER_Y0 = 150;
 const ROSTER_TILE_W = (VIEW_W - 2 * ROSTER_MARGIN - (ROSTER_COLS - 1) * ROSTER_GAP) / ROSTER_COLS;
@@ -420,8 +421,8 @@ export class CharSelectScene implements Scene {
     const t = this.t;
     if (fi < 0) {
       slab(ctx, r, '#3b3566', { skew: 0.08 });
-      label(ctx, '?', r.x + r.w / 2, r.y + r.h / 2 + 40, 110, { align: 'center', stroke: 12, color: '#ffe066' });
-      label(ctx, 'RANDOM', r.x + 18, r.y + r.h - 16, 30, { stroke: 7 });
+      label(ctx, '?', r.x + r.w / 2, r.y + r.h / 2 + 34, 100, { align: 'center', stroke: 12, color: '#ffe066' });
+      label(ctx, 'RANDOM', r.x + 14, r.y + r.h - 16, fitSize(ctx, 'RANDOM', r.w - 28, 30), { stroke: 7 });
       return;
     }
     const def = FIGHTERS[fi];
@@ -435,13 +436,15 @@ export class CharSelectScene implements Scene {
     ctx.clip();
     ctx.fillStyle = rgba('#000000', 0.15);
     for (let i = 0; i < 6; i++) ctx.fillRect(r.x + i * 70 - 60 + ((t * 0.3) % 70), r.y, 26, r.h);
-    ctx.translate(r.x + r.w * 0.72, r.y + r.h + 4);
-    const s = (r.h * 0.82) / def.height;
+    ctx.translate(r.x + r.w * 0.6, r.y + r.h + 4);
+    const s = (r.h * 0.8) / def.height;
     ctx.scale(s, s);
     drawFighter(ctx, posedFighter(def, 0, null, 0), { alpha: 1, flash: 0, shakeX: 0, shakeY: 0, t: t + fi * 50 });
     ctx.restore();
-    label(ctx, def.name, r.x + 18, r.y + r.h - 40, 32, { stroke: 7 });
-    label(ctx, def.archetype.toUpperCase(), r.x + 16, r.y + r.h - 14, 15, { face: 'ui', weight: 800, color: pal.light, stroke: 4 });
+    const room = r.w - 28;
+    label(ctx, def.name, r.x + 14, r.y + r.h - 34, fitSize(ctx, def.name, room, 30), { stroke: 7 });
+    const arch = def.archetype.toUpperCase();
+    label(ctx, arch, r.x + 12, r.y + r.h - 12, fitSize(ctx, arch, room - 6, 14, 'ui', 800), { face: 'ui', weight: 800, color: pal.light, stroke: 4 });
   }
 
   private drawCard(ctx: CanvasRenderingContext2D, i: number): void {
@@ -547,4 +550,11 @@ export class CharSelectScene implements Scene {
     for (let i = 0; i < slot; i++) if (S.slots[i].type !== 'off' && S.slots[i].fighter === f) n++;
     return n % 4;
   }
+}
+
+/** Largest font size (up to max) at which s fits in width w. */
+function fitSize(ctx: CanvasRenderingContext2D, s: string, w: number, max: number, face: 'display' | 'ui' = 'display', weight = 900): number {
+  ctx.font = font(max, face, weight);
+  const m = ctx.measureText(s).width;
+  return m <= w ? max : Math.max(9, Math.floor((max * w) / m));
 }

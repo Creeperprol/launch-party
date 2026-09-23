@@ -176,7 +176,9 @@ export interface Palette {
   eye: string;
 }
 
-export type LookKind = 'nova' | 'grott' | 'zip' | 'sable' | 'cinder' | 'talus' | 'raven' | 'volt' | 'gale';
+export type LookKind =
+  | 'nova' | 'grott' | 'zip' | 'sable' | 'cinder' | 'talus' | 'raven' | 'volt' | 'gale'
+  | 'digby' | 'bruno' | 'koi' | 'mira' | 'rivet' | 'sprout' | 'fang' | 'nox' | 'biscuit' | 'rocco';
 
 export interface FighterDef {
   id: string;

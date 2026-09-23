@@ -90,9 +90,9 @@ const moves: Record<string, MoveDef> = {
     id: 'nspecial', total: 34,
     hitboxes: [
       { g: 0, from: 6, to: 8, at: 'handF', r: 14, dmg: 2, angle: 40, bkb: 10, kbg: 20, fixed: 3, sfx: 'zap' },
-      { g: 0, from: 10, to: 12, at: 'handF', r: 14, dmg: 2, angle: 40, bkb: 10, kbg: 20, fixed: 3, sfx: 'zap' },
-      { g: 0, from: 14, to: 16, at: 'handF', r: 14, dmg: 2, angle: 40, bkb: 10, kbg: 20, fixed: 3, sfx: 'zap' },
-      { g: 1, from: 18, to: 20, at: 'handF', r: 16, dmg: 5, angle: 45, bkb: 40, kbg: 60, sfx: 'zap', fx: 'spark' },
+      { g: 1, from: 10, to: 12, at: 'handF', r: 14, dmg: 2, angle: 40, bkb: 10, kbg: 20, fixed: 3, sfx: 'zap' },
+      { g: 2, from: 14, to: 16, at: 'handF', r: 14, dmg: 2, angle: 40, bkb: 10, kbg: 20, fixed: 3, sfx: 'zap' },
+      { g: 3, from: 18, to: 20, at: 'handF', r: 16, dmg: 5, angle: 45, bkb: 40, kbg: 60, sfx: 'zap', fx: 'spark' },
     ],
     anim: [
       { f: 4, hF: [30, 60], lean: 6 },

@@ -129,7 +129,7 @@ const moves: Record<string, MoveDef> = {
   nspecial: {
     id: 'nspecial', total: 50, iasa: 40,
     projectiles: [{
-      frame: 16, kind: 'spark', at: 'handF', vx: 10, vy: -9, gravity: 0.45, maxFall: 12, bounce: 8, life: 100, r: 18,
+      frame: 16, kind: 'rock', at: 'handF', vx: 10, vy: -9, gravity: 0.45, maxFall: 12, bounce: 8, life: 100, r: 18,
       hit: { dmg: 12, angle: 45, bkb: 30, kbg: 48, sfx: 'heavy', hitlag: 0.9 },
     }],
     hitboxes: [],

@@ -7,6 +7,7 @@ import { drawDebugLabels, drawDebugWorld } from './debug';
 import { drawFighter } from './fighterDraw';
 import { Particles, Swooshes, star } from './fx';
 import { drawHud } from './hud';
+import { drawProjectileKind } from './projectileDraw';
 import { drawBackground, drawStage } from './stageDraw';
 
 export interface PlayerInfo {
@@ -258,6 +259,8 @@ export class MatchRenderer {
         ctx.strokeStyle = '#eaffff';
         ctx.lineWidth = 5;
         ctx.stroke();
+      } else if (drawProjectileKind(ctx, p, this.colorOf(p.owner))) {
+        continue;
       } else {
         const pulse = 1 + Math.sin(p.age * 0.6) * 0.15;
         const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 1.8 * pulse);
