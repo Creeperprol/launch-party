@@ -1,18 +1,28 @@
 const cache = new Map<string, [number, number, number]>();
 
-export function rgb(hex: string): [number, number, number] {
-  let c = cache.get(hex);
+/** Parse '#rgb', '#rrggbb', or 'rgb(r,g,b)' into components. */
+export function rgb(color: string): [number, number, number] {
+  let c = cache.get(color);
   if (c) return c;
-  const h = hex.replace('#', '');
-  const n = parseInt(h.length === 3 ? h.split('').map((x) => x + x).join('') : h, 16);
-  c = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-  cache.set(hex, c);
+  if (color.startsWith('rgb')) {
+    const m = color.match(/[\d.]+/g) ?? ['0', '0', '0'];
+    c = [Number(m[0]), Number(m[1]), Number(m[2])];
+  } else {
+    const h = color.replace('#', '');
+    const n = parseInt(h.length === 3 ? h.split('').map((x) => x + x).join('') : h, 16);
+    c = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  cache.set(color, c);
   return c;
+}
+
+function hex2(v: number): string {
+  return Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0');
 }
 
 const mixCache = new Map<string, string>();
 
-/** Blend two hex colours; t = 0 → a, 1 → b. */
+/** Blend two colours; t = 0 → a, 1 → b. Always returns '#rrggbb'. */
 export function mix(a: string, b: string, t: number): string {
   const q = Math.round(t * 20) / 20;
   const key = a + b + q;
@@ -20,10 +30,7 @@ export function mix(a: string, b: string, t: number): string {
   if (s) return s;
   const A = rgb(a);
   const B = rgb(b);
-  const r = Math.round(A[0] + (B[0] - A[0]) * q);
-  const g = Math.round(A[1] + (B[1] - A[1]) * q);
-  const bl = Math.round(A[2] + (B[2] - A[2]) * q);
-  s = `rgb(${r},${g},${bl})`;
+  s = `#${hex2(A[0] + (B[0] - A[0]) * q)}${hex2(A[1] + (B[1] - A[1]) * q)}${hex2(A[2] + (B[2] - A[2]) * q)}`;
   mixCache.set(key, s);
   return s;
 }

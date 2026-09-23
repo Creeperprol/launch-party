@@ -69,6 +69,59 @@ export class App {
     this.scene = s;
   }
 
+  /** Switch scenes behind a diagonal wipe. */
+  goto(s: Scene): void {
+    if (this.wipe) {
+      this.wipe.next = s;
+      return;
+    }
+    this.wipe = { t: 0, next: s, swapped: false };
+  }
+
+  wipe: { t: number; next: Scene; swapped: boolean } | null = null;
+  private reducedMotion = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  private wipeLen(): number {
+    return this.reducedMotion ? 8 : 26;
+  }
+
+  private drawWipe(ctx: CanvasRenderingContext2D): void {
+    const w = this.wipe;
+    if (!w) return;
+    const L = this.wipeLen();
+    const half = L / 2;
+    // cover: band sweeps in from the right; reveal: continues out to the left
+    const p = w.t < half ? w.t / half : (w.t - half) / half;
+    const ease = (x: number) => 1 - (1 - x) * (1 - x);
+    const k = ease(Math.min(1, p));
+    const slant = 380;
+    const span = VIEW_W + slant;
+    const colors = ['#ff3b4f', '#ffc83b', '#3b8bff', '#15111f'];
+    ctx.save();
+    for (let i = 0; i < colors.length; i++) {
+      const lag = i * 0.08;
+      const kk = Math.max(0, Math.min(1, (k - lag) / (1 - lag * 0.5)));
+      let x0: number;
+      let x1: number;
+      if (w.t < half) {
+        x0 = VIEW_W - kk * (span + 200) - 100;
+        x1 = VIEW_W + slant + 200;
+      } else {
+        x0 = -slant - 200;
+        x1 = VIEW_W + slant - kk * (span + 400);
+      }
+      ctx.fillStyle = colors[i];
+      ctx.beginPath();
+      ctx.moveTo(x0 + slant, 0);
+      ctx.lineTo(x1 + slant, 0);
+      ctx.lineTo(x1, VIEW_H);
+      ctx.lineTo(x0, VIEW_H);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
   start(): void {
     this.canvas.focus();
     this.last = performance.now();
@@ -81,7 +134,16 @@ export class App {
       let n = 0;
       while (this.acc >= step && n < 4) {
         this.devices.poll();
-        this.scene.update(this);
+        if (this.wipe) {
+          this.wipe.t++;
+          if (!this.wipe.swapped && this.wipe.t >= this.wipeLen() / 2) {
+            this.wipe.swapped = true;
+            this.scene = this.wipe.next;
+          }
+          if (this.wipe.t >= this.wipeLen()) this.wipe = null;
+        } else {
+          this.scene.update(this);
+        }
         this.devices.endTick();
         this.tick++;
         this.acc -= step;
@@ -92,6 +154,7 @@ export class App {
       const ctx = this.ctx;
       ctx.setTransform(this.scale, 0, 0, this.scale, this.offX, this.offY);
       this.scene.render(ctx, this);
+      this.drawWipe(ctx);
       const t2 = performance.now();
       this.recordPerf(t1 - t0, t2 - t1, dt, n);
       requestAnimationFrame(frame);

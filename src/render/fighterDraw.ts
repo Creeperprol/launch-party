@@ -487,10 +487,12 @@ function frontExtras(ctx: CanvasRenderingContext2D, c: LookCtx): void {
       const g1 = hp(c, -0.98, 0.55);
       const g2 = hp(c, 0.95, 0.6);
       line(ctx, [g1, g2], r.headR * 0.26, mix(pal.dark, INK, 0.3));
-      const lens = hp(c, 0.5, 0.66);
-      disc(ctx, lens, r.headR * 0.3 + 1.5, INK);
-      disc(ctx, lens, r.headR * 0.3, pal.light);
-      disc(ctx, hp(c, 0.42, 0.74), r.headR * 0.09, '#ffffff');
+      for (const u of [0.62, 0.18]) {
+        const lens = hp(c, u, 0.6);
+        disc(ctx, lens, r.headR * 0.2 + 1.5, INK);
+        disc(ctx, lens, r.headR * 0.2, '#8fe3ff');
+        disc(ctx, hp(c, u - 0.06, 0.66), r.headR * 0.07, '#ffffff');
+      }
       break;
     }
     case 'zip': {

@@ -2,7 +2,7 @@ import type { SimEvent } from '../sim/events';
 import type { Fighter } from '../sim/fighter';
 import type { Match } from '../sim/match';
 import { Camera, VIEW_H, VIEW_W } from './camera';
-import { CPU_GREY, INK, PLAYER_COLORS, rgba } from './color';
+import { CPU_GREY, INK, PLAYER_COLORS, mix, percentColor, rgba } from './color';
 import { drawDebugLabels, drawDebugWorld } from './debug';
 import { drawFighter } from './fighterDraw';
 import { Particles, Swooshes, star } from './fx';
@@ -186,7 +186,7 @@ export class MatchRenderer {
     drawFighter(ctx, f, {
       alpha: intang ? (Math.floor(this.t / 3) % 2 ? 0.55 : 0.8) : 1,
       flash: Math.max(hitFlash, charge, intang ? 0.3 : 0),
-      flashColor: charge && !hitFlash ? '#fff4a0' : '#ffffff',
+      flashColor: charge && !hitFlash ? '#fff4a0' : hitFlash ? mix(percentColor(f.percent), '#ffffff', 0.35) : '#ffffff',
       shakeX: shake,
       shakeY: 0,
       t: this.t + f.idx * 37,

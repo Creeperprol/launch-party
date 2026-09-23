@@ -9,12 +9,17 @@ function hash(n: number): number {
   return x - Math.floor(x);
 }
 
-interface Sky {
-  canvas: HTMLCanvasElement;
-  theme: string;
-}
+const skies = new Map<string, HTMLCanvasElement>();
 
-let sky: Sky | null = null;
+/** Pre-rendered static sky for a theme (cached). */
+export function skyCanvas(theme: string): HTMLCanvasElement {
+  let c = skies.get(theme);
+  if (!c) {
+    c = buildSky(theme);
+    skies.set(theme, c);
+  }
+  return c;
+}
 
 function buildSky(theme: string): HTMLCanvasElement {
   const c = document.createElement('canvas');
@@ -90,8 +95,7 @@ function buildSky(theme: string): HTMLCanvasElement {
 /** Screen-space background with parallax layers. */
 export function drawBackground(ctx: CanvasRenderingContext2D, st: StageRT, cam: Camera, t: number): void {
   const theme = st.def.theme;
-  if (!sky || sky.theme !== theme) sky = { canvas: buildSky(theme), theme };
-  ctx.drawImage(sky.canvas, 0, 0, VIEW_W, VIEW_H);
+  ctx.drawImage(skyCanvas(theme), 0, 0, VIEW_W, VIEW_H);
   const px = (p: number) => -cam.x * p * 0.35;
   const py = (p: number) => -(cam.y + 250) * p * 0.3;
   if (theme === 'sunset') {
