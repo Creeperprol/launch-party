@@ -1,6 +1,6 @@
 import type { FighterDef, MoveDef, Rig } from '../../sim/defs';
 import type { Fighter } from '../../sim/fighter';
-import { commonMoves, grabMoves, leaveGround } from '../kit';
+import { commonMoves, grabMoves, leaveGround, withInnerBlade } from '../kit';
 
 /** FANG — wolf ninja with a katana. Kunai, shadow-step dash, smoke teleport, substitution counter. */
 const rig: Rig = {
@@ -164,6 +164,6 @@ export const FANG: FighterDef = {
       u: { dmg: 5, angle: 90, bkb: 62, kbg: 54 },
       d: { dmg: 4, angle: 80, bkb: 50, kbg: 38 },
     }),
-    ...moves,
+    ...withInnerBlade(moves, 0.45),
   },
 };

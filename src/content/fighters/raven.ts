@@ -55,14 +55,17 @@ const moves: Record<string, MoveDef> = {
   dsmash: {
     id: 'dsmash', total: 50, charge: { frame: 9, smash: true },
     hitboxes: [
-      { g: 0, from: 10, to: 13, pos: [58, 20], r: 20, dmg: 13, angle: 20, bkb: 34, kbg: 90, sfx: 'slash' },
-      { g: 1, from: 22, to: 25, pos: [-58, 20], r: 20, dmg: 13, angle: 20, bkb: 34, kbg: 90, sfx: 'slash' },
+      { g: 0, from: 10, to: 13, at: 'blade', t: 1, r: 18, dmg: 13, angle: 20, bkb: 34, kbg: 90, sfx: 'slash' },
+      { g: 0, from: 10, to: 13, at: 'blade', t: 0.75, r: 16, dmg: 13, angle: 20, bkb: 34, kbg: 90, sfx: 'slash' },
+      { g: 1, from: 22, to: 25, at: 'blade', t: 1, r: 18, dmg: 13, angle: 20, bkb: 34, kbg: 90, sfx: 'slash' },
+      { g: 1, from: 22, to: 25, at: 'blade', t: 0.75, r: 16, dmg: 13, angle: 20, bkb: 34, kbg: 90, sfx: 'slash' },
     ],
     anim: [
       { f: 5, hip: [0, 30], lean: 20, w: 20 },
-      { f: 10, hip: [0, 30], lean: 20, w: -60 },
-      { f: 16, hip: [0, 30], lean: -20, w: 60 },
-      { f: 23, hip: [0, 30], lean: -20, w: -50 },
+      { f: 10, hip: [0, 30], lean: 20, w: -15, hF: [30, 40] },
+      { f: 16, hip: [0, 30], lean: -10, w: 90, hF: [0, 70] },
+      { f: 22, hip: [0, 30], lean: -20, w: -165, hF: [-26, 40] },
+      { f: 26, hip: [0, 30], lean: -20, w: -170, hF: [-26, 40] },
     ],
   },
   nair: {

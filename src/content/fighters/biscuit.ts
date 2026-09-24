@@ -53,11 +53,14 @@ const moves: Record<string, MoveDef> = {
   },
   dsmash: {
     id: 'dsmash', total: 48, charge: { frame: 8, smash: true },
-    hitboxes: [
-      { g: 0, from: 11, to: 14, pos: [48, 10], r: 22, dmg: 13, angle: 28, bkb: 32, kbg: 86, sfx: 'blunt' },
-      { g: 1, from: 20, to: 23, pos: [-48, 10], r: 22, dmg: 13, angle: 28, bkb: 32, kbg: 86, sfx: 'blunt' },
+    hitboxes: [pan(0, 11, 14, 13, 28, 86, 22), pan(1, 20, 23, 13, 28, 86, 22)],
+    anim: [
+      { f: 5, hip: [0, 28], lean: 20, w: 60 },
+      { f: 11, hip: [0, 28], lean: 26, w: -60, hF: [26, 44] },
+      { f: 16, hip: [0, 28], lean: -20, w: 100, hF: [0, 70] },
+      { f: 20, hip: [0, 28], lean: -24, w: -120, hF: [-24, 44] },
+      { f: 24, hip: [0, 28], lean: -24, w: -120, hF: [-24, 44] },
     ],
-    anim: [{ f: 5, hip: [0, 28], lean: 20, w: 60 }, { f: 11, hip: [0, 28], lean: 26, w: -80 }, { f: 16, hip: [0, 28], lean: -20, w: 100 }, { f: 21, hip: [0, 28], lean: -24, w: 240 }],
   },
   nair: {
     id: 'nair', total: 36, air: true, landingLag: 8,

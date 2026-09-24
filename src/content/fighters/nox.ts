@@ -1,6 +1,6 @@
 import type { FighterDef, MoveDef, Rig } from '../../sim/defs';
 import type { Fighter } from '../../sim/fighter';
-import { commonMoves, grabMoves, leaveGround } from '../kit';
+import { commonMoves, grabMoves, leaveGround, withInnerBlade } from '../kit';
 
 /** NOX — lantern specter with a soul scythe. Three midair jumps, drifting wisps, phase-through dash, reaping slam. */
 const rig: Rig = {
@@ -143,6 +143,6 @@ export const NOX: FighterDef = {
       u: { dmg: 5, angle: 90, bkb: 62, kbg: 52 },
       d: { dmg: 4, angle: 76, bkb: 48, kbg: 36 },
     }),
-    ...moves,
+    ...withInnerBlade(moves, 0.68),
   },
 };

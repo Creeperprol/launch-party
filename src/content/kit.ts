@@ -337,3 +337,14 @@ export function leaveGround(f: Fighter, vy: number): void {
     f.move!.vars.hop = 1;
   }
 }
+
+/** Gives every tip-anchored blade hitbox a partner further down the blade (same hit group, no tipper). */
+export function withInnerBlade(moves: Record<string, MoveDef>, t: number): Record<string, MoveDef> {
+  for (const mv of Object.values(moves)) {
+    const inner = mv.hitboxes
+      .filter((h) => h.at === 'blade' && (h.t ?? 1) >= 0.8)
+      .map((h) => ({ ...h, t, r: Math.round(h.r * 0.85), sfx: h.sfx === 'tip' ? ('slash' as const) : h.sfx }));
+    mv.hitboxes.push(...inner);
+  }
+  return moves;
+}

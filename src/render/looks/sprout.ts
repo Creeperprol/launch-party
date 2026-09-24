@@ -75,15 +75,4 @@ export const SPROUT_LOOK: Look = {
     ctx.arc(mc.x, mc.y, hr * 0.12, Math.PI * 1.2, Math.PI * 1.8);
     ctx.stroke();
   },
-  held(ctx, c) {
-    if (c.f.state !== 'move') return;
-    const h = c.P.hdF;
-    const d = { x: h.x - c.P.elF.x, y: h.y - c.P.elF.y };
-    const l = Math.hypot(d.x, d.y) || 1;
-    const u = { x: d.x / l, y: d.y / l };
-    const pts: V2[] = [];
-    for (let k = 0; k <= 6; k++) pts.push(add(add(h, u, k * 5), { x: -u.y, y: u.x }, Math.sin(c.t * 0.4 + k) * 3));
-    line(ctx, pts, 3.5 + OUT, INK);
-    line(ctx, pts, 3.5, c.pal.dark);
-  },
 };

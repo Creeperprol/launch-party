@@ -284,6 +284,7 @@ export const ELEMENT_COLOR: Record<string, string> = {
   water: '#7fdcff',
   soul: '#8affd0',
   rock: '#e0c090',
+  vine: '#8fe06a',
 };
 
 export function star(ctx: CanvasRenderingContext2D, x: number, y: number, R: number, r: number, rot: number, n: number): void {

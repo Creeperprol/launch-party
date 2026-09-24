@@ -24,7 +24,7 @@ export interface AnimKey {
 export type Sfx = 'punch' | 'kick' | 'slash' | 'heavy' | 'fire' | 'spark' | 'zap' | 'blunt' | 'boom' | 'tip';
 
 /** Visual element of a hit: drives swoosh colour and impact effects (render-only). */
-export type HitFx = 'swoosh' | 'fire' | 'spark' | 'shock' | 'none' | 'slash' | 'water' | 'soul' | 'rock';
+export type HitFx = 'swoosh' | 'fire' | 'spark' | 'shock' | 'none' | 'slash' | 'water' | 'soul' | 'rock' | 'vine';
 
 export interface HitData {
   dmg: number;
@@ -57,6 +57,8 @@ export interface HitboxDef extends HitData {
   r: number;
   /** Take damage from move.vars[dmgVar] (counters). */
   dmgVar?: string;
+  /** Render a tendril (whip / vine) from the front hand through this hitbox. */
+  link?: boolean;
   /** Linear scaling with charge fraction for charged specials. */
   charge?: { dmg?: [number, number]; bkb?: [number, number]; kbg?: [number, number]; shieldDmg?: [number, number] };
 }

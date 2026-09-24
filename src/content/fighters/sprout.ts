@@ -11,7 +11,7 @@ const W = 44;
 const H = 82;
 
 const vine = (g: number, from: number, to: number, x: number, y: number, dmg: number, kbg = 74): MoveDef['hitboxes'][number] =>
-  ({ g, from, to, pos: [x, y], r: 17, dmg, angle: 38, bkb: 30, kbg, sfx: 'slash' });
+  ({ g, from, to, pos: [x, y], r: 17, dmg, angle: 38, bkb: 30, kbg, sfx: 'slash', fx: 'vine', link: true });
 
 const moves: Record<string, MoveDef> = {
   jab1: {

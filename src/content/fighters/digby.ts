@@ -57,12 +57,15 @@ const moves: Record<string, MoveDef> = {
   dsmash: {
     id: 'dsmash', total: 48, charge: { frame: 8, smash: true },
     hitboxes: [
-      { g: 0, from: 10, to: 13, pos: [44, 12], r: 20, dmg: 13, angle: 25, bkb: 32, kbg: 88, sfx: 'blunt' },
-      { g: 1, from: 20, to: 23, pos: [-44, 12], r: 20, dmg: 13, angle: 25, bkb: 32, kbg: 88, sfx: 'blunt' },
+      { g: 0, from: 10, to: 13, at: 'blade', t: 1, r: 20, dmg: 13, angle: 25, bkb: 32, kbg: 88, sfx: 'blunt' },
+      { g: 1, from: 20, to: 23, at: 'blade', t: 1, r: 20, dmg: 13, angle: 25, bkb: 32, kbg: 88, sfx: 'blunt' },
     ],
     anim: [
-      { f: 4, hip: [0, 28], lean: 20, w: 60 }, { f: 10, hip: [0, 28], lean: 26, w: -80 },
-      { f: 16, hip: [0, 28], lean: -20, w: 100 }, { f: 21, hip: [0, 28], lean: -24, w: 240 },
+      { f: 4, hip: [0, 28], lean: 20, w: 60 },
+      { f: 10, hip: [0, 28], lean: 26, w: -60, hF: [24, 44] },
+      { f: 16, hip: [0, 28], lean: -20, w: 100, hF: [0, 70] },
+      { f: 20, hip: [0, 28], lean: -24, w: -120, hF: [-22, 44] },
+      { f: 24, hip: [0, 28], lean: -24, w: -120, hF: [-22, 44] },
     ],
   },
   nair: {
@@ -115,8 +118,8 @@ const moves: Record<string, MoveDef> = {
   dspecial: {
     id: 'dspecial', total: 56,
     hitboxes: [
-      { g: 0, from: 20, to: 23, pos: [40, 10], r: 26, dmg: 15, angle: 75, bkb: 45, kbg: 80, sfx: 'heavy', fx: 'shock' },
-      { g: 0, from: 20, to: 23, pos: [80, 10], r: 20, dmg: 11, angle: 60, bkb: 40, kbg: 70, sfx: 'blunt' },
+      { g: 0, from: 20, to: 23, at: 'blade', t: 1, r: 26, dmg: 15, angle: 75, bkb: 45, kbg: 80, sfx: 'heavy', fx: 'rock' },
+      { g: 0, from: 20, to: 23, pos: [80, 10], r: 20, dmg: 11, angle: 60, bkb: 40, kbg: 70, sfx: 'blunt', fx: 'rock' },
     ],
     anim: [{ f: 8, w: 170, lean: -14, hip: [0, 40] }, { f: 17, w: 170, lean: -14 }, { f: 20, w: -90, lean: 34, hip: [0, 28] }, { f: 30, w: -95, lean: 34, hip: [0, 28] }],
   },

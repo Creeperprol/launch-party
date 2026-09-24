@@ -101,8 +101,8 @@ export const NOX_LOOK: Look = {
     // crescent blade hooks back from the tip on the -n side
     const down = { x: -n.x, y: -n.y };
     const blade = [
-      add(tip, down, -3), add(add(tip, d, -12), down, 13), add(add(tip, d, -30), down, 20), add(add(tip, d, -46), down, 15),
-      add(add(tip, d, -30), down, 12), add(add(tip, d, -14), down, 6), add(tip, down, 4),
+      add(tip, down, -3), add(add(tip, d, -10), down, 11), add(add(tip, d, -24), down, 15), add(add(tip, d, -36), down, 11),
+      add(add(tip, d, -24), down, 9), add(add(tip, d, -12), down, 5), add(tip, down, 4),
     ];
     const glow = 0.35 + 0.2 * Math.sin(c.t * 0.12);
     ctx.save();

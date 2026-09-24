@@ -12,7 +12,7 @@ const W = 46;
 const H = 90;
 
 const whip = (from: number, to: number, x: number, y: number, dmg: number, angle: number): MoveDef['hitboxes'][number] =>
-  ({ g: 0, from, to, pos: [x, y], r: 18, dmg, angle, bkb: 30, kbg: 76, sfx: 'spark', fx: 'water' });
+  ({ g: 0, from, to, pos: [x, y], r: 18, dmg, angle, bkb: 30, kbg: 76, sfx: 'spark', fx: 'water', link: true });
 
 const moves: Record<string, MoveDef> = {
   jab1: {

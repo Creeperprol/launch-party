@@ -286,8 +286,12 @@ export class MatchRenderer {
   /** Effects bound to hitboxes placed in space (fire breath, shockwaves, electric auras). */
   drawActiveFx(ctx: CanvasRenderingContext2D, m: Match): void {
     for (const f of m.fighters) {
+      this.drawTendrils(ctx, f);
       for (const h of f.hits) {
         const fx = h.def.fx;
+        // effect-only hitboxes (not riding a limb or weapon) get a visual exactly their size
+        const detached = !!h.def.pos || ((h.def.at === 'center' || h.def.at === 'hip' || h.def.at === 'head') && h.r >= 30);
+        if (h.def.link) continue;
         if (fx === 'fire' && (h.def.pos || h.def.at === 'center')) {
           const g = ctx.createRadialGradient(h.x, h.y, 0, h.x, h.y, h.r * 1.2);
           g.addColorStop(0, 'rgba(255,245,180,0.95)');
@@ -298,20 +302,25 @@ export class MatchRenderer {
           ctx.arc(h.x, h.y, h.r * 1.2, 0, Math.PI * 2);
           ctx.fill();
           if (this.t % 2 === 0) this.particles.add({ kind: 'flame', x: h.x + (Math.random() - 0.5) * h.r, y: h.y + (Math.random() - 0.5) * h.r, vy: -2, life: 14, size: h.r * 0.4, color: '#ff7a2a' });
-        } else if (fx === 'shock') {
-          ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+        } else if (fx === 'shock' || (fx === 'rock' && detached)) {
+          ctx.strokeStyle = fx === 'rock' ? 'rgba(232,210,170,0.9)' : 'rgba(255,255,255,0.8)';
           ctx.lineWidth = 6;
           ctx.beginPath();
-          ctx.ellipse(h.x, h.y, h.r * 1.1, h.r * 0.45, 0, 0, Math.PI * 2);
+          // ground shockwaves are flat; big body-centred blasts (roars) are a full ring the size of the hitbox
+          if (!h.def.pos && h.r >= 30) {
+            ctx.arc(h.x, h.y, h.r * (0.75 + 0.2 * Math.sin(this.t * 0.8)), 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.fill();
+          } else ctx.ellipse(h.x, h.y, h.r * 1.1, h.r * 0.45, 0, 0, Math.PI * 2);
           ctx.stroke();
           if (this.t % 2 === 0) this.particles.dust(h.x, h.y + h.r * 0.3, 1, dustColor(m), 1.5);
-        } else if (fx === 'spark' && h.def.at === 'center') {
+        } else if (fx === 'spark' && (h.def.at === 'center' || detached)) {
           ctx.strokeStyle = 'rgba(140,250,255,0.8)';
           ctx.lineWidth = 3;
           ctx.beginPath();
-          for (let i = 0; i < 8; i++) {
-            const a = (i / 8) * Math.PI * 2 + this.t;
-            const r = h.r * (0.7 + Math.random() * 0.5);
+          for (let i = 0; i < 10; i++) {
+            const a = (i / 10) * Math.PI * 2 + this.t;
+            const r = h.r * (0.7 + Math.random() * 0.4);
             const x = h.x + Math.cos(a) * r;
             const y = h.y + Math.sin(a) * r;
             if (i === 0) ctx.moveTo(x, y);
@@ -319,8 +328,87 @@ export class MatchRenderer {
           }
           ctx.closePath();
           ctx.stroke();
+          ctx.fillStyle = 'rgba(140,250,255,0.12)';
+          ctx.fill();
+        } else if (detached && (fx === 'water' || fx === 'soul')) {
+          const col = fx === 'water' ? '127,220,255' : '138,255,208';
+          const g = ctx.createRadialGradient(h.x, h.y, h.r * 0.2, h.x, h.y, h.r);
+          g.addColorStop(0, `rgba(${col},0.15)`);
+          g.addColorStop(0.75, `rgba(${col},0.45)`);
+          g.addColorStop(1, `rgba(${col},0)`);
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(h.x, h.y, h.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = `rgba(${col},0.85)`;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(h.x, h.y, h.r * (0.8 + 0.15 * Math.sin(this.t * 0.6)), 0, Math.PI * 2);
+          ctx.stroke();
+          if (this.t % 3 === 0) {
+            const a = Math.random() * Math.PI * 2;
+            if (fx === 'water') this.particles.add({ kind: 'drop', x: h.x + Math.cos(a) * h.r * 0.7, y: h.y + Math.sin(a) * h.r * 0.7, vx: Math.cos(a) * 3, vy: -3, life: 16, size: 3.5, color: '#bff0ff', grav: 0.4 });
+            else this.particles.add({ kind: 'glow', x: h.x + Math.cos(a) * h.r * 0.6, y: h.y + Math.sin(a) * h.r * 0.6, vy: -2, life: 18, size: 10, color: '#8affd0' });
+          }
+        } else if (detached && fx !== 'none') {
+          // generic burst for any other effect-only hitbox
+          ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.arc(h.x, h.y, h.r * 0.95, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(255,255,255,0.12)';
+          ctx.fill();
         }
       }
+    }
+  }
+
+  /** Whips and vines: a tendril from the nearest hand through every active linked hitbox. */
+  private drawTendrils(ctx: CanvasRenderingContext2D, f: Fighter): void {
+    const linked = f.hits.filter((h) => h.def.link);
+    if (!linked.length) return;
+    const P = f.pose;
+    const hands = [P.hdF, P.hdB].map((p) => ({ x: f.x + p.x * f.facing, y: f.y - p.y }));
+    for (const side of [1, -1]) {
+      const hs = linked.filter((h) => ((h.x - f.x) * f.facing >= 0 ? 1 : -1) === side);
+      if (!hs.length) continue;
+      const far = hs.reduce((a, b) => (Math.abs(b.x - f.x) > Math.abs(a.x - f.x) ? b : a));
+      const hand = hands.reduce((a, b) => (Math.hypot(b.x - far.x, b.y - far.y) < Math.hypot(a.x - far.x, a.y - far.y) ? b : a));
+      hs.sort((a, b) => Math.hypot(a.x - hand.x, a.y - hand.y) - Math.hypot(b.x - hand.x, b.y - hand.y));
+      const pts = [hand, ...hs.map((h) => ({ x: h.x, y: h.y }))];
+      const fx = hs[0].def.fx;
+      const col = fx === 'water' ? '#7fdcff' : fx === 'vine' ? '#5fbf4a' : '#ffffff';
+      const w = Math.max(...hs.map((h) => h.r)) * 0.8;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      const trace = () => {
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) {
+          const a = pts[i - 1];
+          const b = pts[i];
+          const wave = Math.sin(this.t * 0.5 + i) * 6;
+          ctx.quadraticCurveTo((a.x + b.x) / 2, (a.y + b.y) / 2 + wave, b.x, b.y);
+        }
+      };
+      trace();
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = w + 5;
+      ctx.stroke();
+      trace();
+      ctx.strokeStyle = col;
+      ctx.lineWidth = w;
+      ctx.stroke();
+      trace();
+      ctx.strokeStyle = rgba('#ffffff', 0.45);
+      ctx.lineWidth = Math.max(2, w * 0.25);
+      ctx.stroke();
+      const tip = pts[pts.length - 1];
+      ctx.fillStyle = fx === 'vine' ? '#8fe06a' : '#e6fbff';
+      ctx.beginPath();
+      ctx.arc(tip.x, tip.y, w * 0.55, 0, Math.PI * 2);
+      ctx.fill();
     }
   }
 
