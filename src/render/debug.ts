@@ -2,7 +2,7 @@ import type { Match } from '../sim/match';
 import { ECB_FOOT, ECB_W } from '../sim/physics';
 import { posePoint } from '../sim/pose';
 
-/** Debug overlay: hitboxes, hurtboxes, shields, ledge-grab boxes, collision boxes, state + frame. */
+/** Debug overlay: hitboxes, hurtboxes, ledge-grab boxes, collision boxes, state + frame. */
 export function drawDebugWorld(ctx: CanvasRenderingContext2D, m: Match): void {
   ctx.save();
   ctx.lineCap = 'round';
@@ -31,14 +31,6 @@ export function drawDebugWorld(ctx: CanvasRenderingContext2D, m: Match): void {
     if (!f.grounded) {
       ctx.strokeStyle = 'rgba(80,220,255,0.7)';
       ctx.strokeRect(f.x - f.W / 2 - 36, f.y - f.H - 24, f.W + 72, f.H * 0.65 + 24);
-    }
-    // shield
-    if (f.shielding()) {
-      ctx.strokeStyle = 'rgba(120,170,255,0.9)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(f.shieldX, f.shieldY, f.shieldR, 0, Math.PI * 2);
-      ctx.stroke();
     }
     // hitboxes
     for (const h of f.hits) {

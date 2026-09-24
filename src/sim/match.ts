@@ -1,6 +1,6 @@
 import {
-  COUNTDOWN_FRAMES, GRAB_BASE, GRAB_PER_PERCENT, KB_DECAY, LAUNCH_SCALE, MAX_PERCENT, RESPAWN_DELAY, SHIELD_DMG_MULT,
-  SHIELD_MAX, SUDDEN_DEATH_PERCENT, TUMBLE_KB,
+  COUNTDOWN_FRAMES, GRAB_BASE, GRAB_PER_PERCENT, KB_DECAY, LAUNCH_SCALE, MAX_PERCENT, RESPAWN_DELAY,
+  SUDDEN_DEATH_PERCENT, TUMBLE_KB,
 } from './constants';
 import type { FighterDef, HitboxDef, HitData, ProjectileSpawn, StageDef } from './defs';
 import type { SimEvent } from './events';
@@ -227,7 +227,6 @@ export class Match {
     f.grounded = false;
     f.groundId = -1;
     f.percent = this.suddenDeath ? SUDDEN_DEATH_PERCENT : 0;
-    f.shieldHP = SHIELD_MAX;
     f.jumpsLeft = f.def.jumps;
     f.airdodgeUsed = false;
     f.sideBUsed = false;
@@ -323,7 +322,7 @@ export class Match {
 
   resolveCombat(): void {
     const F = this.fighters;
-    const pend: { a: Fighter; v: Fighter; hb: HitboxInst; kind: 'hit' | 'shield' | 'counter' }[] = [];
+    const pend: { a: Fighter; v: Fighter; hb: HitboxInst; kind: 'hit' | 'counter' }[] = [];
     for (const a of F) {
       if (!a.alive() || a.hitlag > 0 || a.hits.length === 0 || !a.move) continue;
       const mv = a.move;
@@ -334,10 +333,6 @@ export class Match {
           if (got && got.includes(v.idx)) continue;
           if (v.counterActive() && capHitsHurt(hb.px, hb.py, hb.x, hb.y, hb.r, v)) {
             pend.push({ a, v, hb, kind: 'counter' });
-            break;
-          }
-          if (v.shielding() && capCircle(hb.px, hb.py, hb.x, hb.y, hb.r, v.shieldX, v.shieldY, v.shieldR)) {
-            pend.push({ a, v, hb, kind: 'shield' });
             break;
           }
           if (capHitsHurt(hb.px, hb.py, hb.x, hb.y, hb.r, v)) {
@@ -377,8 +372,6 @@ export class Match {
       const eff = effectiveHit(p.hb.def, mv);
       if (p.kind === 'counter') {
         if (p.v.counterActive()) this.applyCounter(p.a, p.v, eff.dmg, p.a.x);
-      } else if (p.kind === 'shield') {
-        this.applyShield(p.a, p.v, eff, false, p.a.x);
       } else {
         const rad = !!p.hb.def.radial;
         this.applyHit(p.a, p.v, eff, rad ? p.hb.x : p.a.cx, rad ? p.hb.y : p.a.cy, p.a.facing, p.a.idx, false, (p.hb.x + p.v.cx) / 2, (p.hb.y + p.v.cy) / 2);
@@ -440,26 +433,6 @@ export class Match {
     v.stats.taken += d;
   }
 
-  applyShield(a: Fighter | null, v: Fighter, h: HitData, projectile: boolean, sx: number): void {
-    v.shieldHP -= h.dmg * SHIELD_DMG_MULT + (h.shieldDmg ?? 0);
-    const hl = Math.floor(hitlagFrames(h.dmg, h.hitlag ?? 1) * 0.67);
-    v.hitlag = Math.max(v.hitlag, hl);
-    if (a && !projectile) a.hitlag = Math.max(a.hitlag, hl);
-    v.wasHit = true;
-    this.emit({ t: 'hit', x: v.shieldX, y: v.shieldY, dmg: h.dmg, kb: 0, attacker: a ? a.idx : -1, victim: v.idx, sfx: h.sfx ?? 'punch', blocked: true });
-    if (v.shieldHP <= 0) {
-      this.shieldBreak(v);
-      return;
-    }
-    v.enter('shieldstun');
-    v.shieldStun = Math.floor(h.dmg * 0.6 + 3);
-    const dir = v.x >= sx ? 1 : -1;
-    v.vx = dir * Math.min(1.5 + h.dmg * 0.45, 10);
-    if (a && !projectile && a.grounded && Math.abs(a.x - v.x) < (a.W + v.W) * 0.75) {
-      a.vx = -dir * Math.min(1 + h.dmg * 0.25, 6);
-    }
-  }
-
   applyCounter(a: Fighter | null, v: Fighter, dmg: number, srcX: number): void {
     const c = v.move?.def.counter;
     if (!c) return;
@@ -471,20 +444,6 @@ export class Match {
     v.wasHit = true;
     if (a) a.hitlag = Math.max(a.hitlag, 16);
     this.emit({ t: 'counter', x: v.cx, y: v.cy, who: v.idx });
-  }
-
-  shieldBreak(f: Fighter): void {
-    f.shieldHP = 0;
-    f.move = null;
-    f.enter('shieldbreak');
-    f.grounded = false;
-    f.groundId = -1;
-    f.vy = -13;
-    f.vx = 0;
-    f.kbx = 0;
-    f.kby = 0;
-    f.shieldStun = 0;
-    this.emit({ t: 'shieldbreak', x: f.cx, y: f.cy, who: f.idx });
   }
 
   checkFinalHit(v: Fighter): void {
@@ -724,11 +683,6 @@ export class Match {
           p.dead = true;
           break;
         }
-        if (v.shielding() && capCircle(p.px, p.py, p.x, p.y, p.r, v.shieldX, v.shieldY, v.shieldR)) {
-          this.applyShield(null, v, p.hit, true, p.x);
-          p.dead = true;
-          break;
-        }
         if (capHitsHurt(p.px, p.py, p.x, p.y, p.r, v)) {
           this.applyHit(null, v, p.hit, p.x - Math.sign(p.vx || 1) * 20, p.y, Math.sign(p.vx) || 1, p.owner, true, p.x, p.y);
           p.dead = true;
@@ -763,17 +717,15 @@ export function effectiveHit(h: HitboxDef, mv: MoveInst): HitData {
   let dmg = h.dmg;
   let bkb = h.bkb;
   let kbg = h.kbg;
-  let shieldDmg = h.shieldDmg;
   if (h.charge) {
     if (h.charge.dmg) dmg = lerp(h.charge.dmg[0], h.charge.dmg[1], c);
     if (h.charge.bkb) bkb = lerp(h.charge.bkb[0], h.charge.bkb[1], c);
     if (h.charge.kbg) kbg = lerp(h.charge.kbg[0], h.charge.kbg[1], c);
-    if (h.charge.shieldDmg) shieldDmg = lerp(h.charge.shieldDmg[0], h.charge.shieldDmg[1], c);
   } else if (mv.def.charge?.smash) {
     dmg *= 1 + 0.4 * c;
   }
   if (h.dmgVar && mv.vars[h.dmgVar] !== undefined) dmg = mv.vars[h.dmgVar];
   dmg = Math.round(dmg * 10) / 10;
-  return { ...h, dmg, bkb, kbg, shieldDmg };
+  return { ...h, dmg, bkb, kbg };
 }
 

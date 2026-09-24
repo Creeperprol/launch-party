@@ -51,13 +51,14 @@ export class StageSelectScene implements Scene {
 
   constructor(flow: Flow) {
     this.flow = flow;
-    const w = 540;
-    const h = 304;
-    const gap = 60;
-    const x0 = (VIEW_W - (3 * w + 2 * gap)) / 2;
+    const gap = 50;
+    const margin = 70;
+    const w = Math.min(540, (VIEW_W - 2 * margin - (STAGES.length - 1) * gap) / STAGES.length);
+    const h = w * (304 / 540);
+    const x0 = (VIEW_W - (STAGES.length * w + (STAGES.length - 1) * gap)) / 2;
     STAGES.forEach((_, i) => this.cards.push({ idx: i, rect: { x: x0 + i * (w + gap), y: 230, w, h } }));
     this.cards.push({ idx: -1, rect: { x: VIEW_W / 2 - 230, y: 760, w: 460, h: 120 } });
-    this.sel = flow.session.stage < 0 ? 3 : flow.session.stage;
+    this.sel = flow.session.stage < 0 ? STAGES.length : flow.session.stage;
   }
 
   update(app: App): void {
@@ -70,12 +71,12 @@ export class StageSelectScene implements Scene {
     if (m.moved && this.hover >= 0) this.sel = this.hover;
     if (inp.left) this.step(app, -1);
     if (inp.right) this.step(app, 1);
-    if (inp.down && this.sel < 3) {
-      this.sel = 3;
+    if (inp.down && this.sel < STAGES.length) {
+      this.sel = STAGES.length;
       app.sfx.menuMove();
     }
-    if (inp.up && this.sel === 3) {
-      this.sel = 1;
+    if (inp.up && this.sel === STAGES.length) {
+      this.sel = Math.floor((STAGES.length - 1) / 2);
       app.sfx.menuMove();
     }
     this.hoverBack = inRect(this.backRect, m.x, m.y);

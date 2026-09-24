@@ -45,7 +45,23 @@ export const LANTERN_DOCK: StageDef = {
   theme: 'harbor',
 };
 
-export const STAGES: readonly StageDef[] = [CROWN_RUINS, VANISHING_POINT, LANTERN_DOCK];
+export const TRAINING_CAVE: StageDef = {
+  id: 'cave',
+  name: 'TRAINING CAVE',
+  subtitle: 'Torchlit stone — bring a dummy and drill combos',
+  main: { x1: -640, x2: 640, top: 0, bottom: 260 },
+  platforms: [
+    { x1: -260, x2: -70, y: -190 },
+    { x1: 70, x2: 260, y: -190 },
+  ],
+  blast: { left: -1500, right: 1500, top: -1200, bottom: 900 },
+  camera: { left: -1250, right: 1250, top: -1000, bottom: 600 },
+  spawns: [[-360, 0], [360, 0], [-140, 0], [140, 0]],
+  respawn: [0, -580],
+  theme: 'cave',
+};
+
+export const STAGES: readonly StageDef[] = [CROWN_RUINS, VANISHING_POINT, LANTERN_DOCK, TRAINING_CAVE];
 
 export function stageById(id: string): StageDef {
   const s = STAGES.find((x) => x.id === id);

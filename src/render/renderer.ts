@@ -178,21 +178,6 @@ export class MatchRenderer {
       shakeY: 0,
       t: this.t + f.idx * 37,
     });
-    if (f.shielding()) {
-      const col = this.colorOf(f.idx);
-      const k = f.shieldHP / 50;
-      ctx.fillStyle = rgba(col, 0.28 + (1 - k) * 0.15);
-      ctx.strokeStyle = rgba('#ffffff', 0.7);
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(f.shieldX, f.shieldY, f.shieldR, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = 'rgba(255,255,255,0.35)';
-      ctx.beginPath();
-      ctx.arc(f.shieldX - f.shieldR * 0.35, f.shieldY - f.shieldR * 0.35, f.shieldR * 0.22, 0, Math.PI * 2);
-      ctx.fill();
-    }
     if (f.state === 'dizzy') {
       for (let i = 0; i < 3; i++) {
         const a = this.t * 0.12 + (i * Math.PI * 2) / 3;

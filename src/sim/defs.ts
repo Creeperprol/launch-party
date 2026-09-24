@@ -35,7 +35,6 @@ export interface HitData {
   /** Set knockback: ignores percent (multi-hits, no-flinch shots). */
   fixed?: number;
   hitlag?: number;
-  shieldDmg?: number;
   sfx?: Sfx;
   /** Launch away from the source centre regardless of angle (explosions). */
   radial?: boolean;
@@ -60,7 +59,7 @@ export interface HitboxDef extends HitData {
   /** Render a tendril (whip / vine) from the front hand through this hitbox. */
   link?: boolean;
   /** Linear scaling with charge fraction for charged specials. */
-  charge?: { dmg?: [number, number]; bkb?: [number, number]; kbg?: [number, number]; shieldDmg?: [number, number] };
+  charge?: { dmg?: [number, number]; bkb?: [number, number]; kbg?: [number, number] };
 }
 
 export interface GrabBoxDef {

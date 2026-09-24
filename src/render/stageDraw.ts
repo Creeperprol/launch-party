@@ -70,6 +70,28 @@ function buildSky(theme: string): HTMLCanvasElement {
       g.fillStyle = `rgba(255,255,255,${0.35 + hash(i + 3000) * 0.6})`;
       g.fillRect(x, y, s, s);
     }
+  } else if (theme === 'cave') {
+    const grd = g.createLinearGradient(0, 0, 0, VIEW_H);
+    grd.addColorStop(0, '#050308');
+    grd.addColorStop(0.55, '#150d18');
+    grd.addColorStop(0.85, '#2a1712');
+    grd.addColorStop(1, '#180c08');
+    g.fillStyle = grd;
+    g.fillRect(0, 0, VIEW_W, VIEW_H);
+    // warm ambient glow rising from unseen torches below
+    const glow = g.createRadialGradient(VIEW_W / 2, VIEW_H, 100, VIEW_W / 2, VIEW_H, 1200);
+    glow.addColorStop(0, 'rgba(255,140,60,0.16)');
+    glow.addColorStop(1, 'rgba(255,140,60,0)');
+    g.fillStyle = glow;
+    g.fillRect(0, 0, VIEW_W, VIEW_H);
+    // drifting dust motes
+    for (let i = 0; i < 140; i++) {
+      const x = hash(i) * VIEW_W;
+      const y = hash(i + 1000) * VIEW_H;
+      const s = hash(i + 2000) < 0.85 ? 1.2 : 2.4;
+      g.fillStyle = `rgba(255,200,140,${0.08 + hash(i + 3000) * 0.22})`;
+      g.fillRect(x, y, s, s);
+    }
   } else {
     const grd = g.createLinearGradient(0, 0, 0, VIEW_H);
     grd.addColorStop(0, '#16304f');
@@ -148,6 +170,46 @@ export function drawBackground(ctx: CanvasRenderingContext2D, st: StageRT, cam: 
       ctx.fillStyle = 'rgba(120,110,170,0.35)';
       ctx.beginPath();
       ctx.arc(dx, dy, 4 + hash(i) * 9, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (theme === 'cave') {
+    // distant cavern walls
+    ctx.fillStyle = '#1c1210';
+    const ox = px(0.2);
+    const oy = py(0.15);
+    for (let i = 0; i < 10; i++) {
+      const x = ((i * 240 + ox) % 2600 + 2600) % 2600 - 340;
+      const h = 260 + hash(i) * 260;
+      const w = 90 + hash(i + 3) * 90;
+      ctx.beginPath();
+      ctx.moveTo(x, 900 + oy);
+      ctx.lineTo(x + w * 0.2, 900 - h + oy);
+      ctx.lineTo(x + w * 0.6, 900 - h * 0.7 + oy);
+      ctx.lineTo(x + w, 900 + oy);
+      ctx.closePath();
+      ctx.fill();
+    }
+    // hanging stalactites
+    ctx.fillStyle = '#241813';
+    const sx = px(0.4);
+    for (let i = 0; i < 14; i++) {
+      const x = ((i * 180 + sx) % 2400 + 2400) % 2400 - 240;
+      const len = 60 + hash(i + 8) * 140;
+      const w = 20 + hash(i + 9) * 26;
+      ctx.beginPath();
+      ctx.moveTo(x - w / 2, 0);
+      ctx.lineTo(x + w / 2, 0);
+      ctx.lineTo(x, len + py(0.5));
+      ctx.closePath();
+      ctx.fill();
+    }
+    // a few drifting embers
+    for (let i = 0; i < 10; i++) {
+      const ex = ((i * 260 + px(0.6) + t * 0.3) % 2200 + 2200) % 2200 - 200;
+      const ey = 400 + hash(i + 12) * 500 + py(0.6) + Math.sin(t * 0.03 + i) * 20;
+      ctx.fillStyle = `rgba(255,150,70,${0.3 + hash(i) * 0.4})`;
+      ctx.beginPath();
+      ctx.arc(ex, ey, 2 + hash(i + 5) * 2, 0, Math.PI * 2);
       ctx.fill();
     }
   } else {
@@ -315,6 +377,47 @@ export function drawStage(ctx: CanvasRenderingContext2D, st: StageRT, t: number)
     u.addColorStop(1, 'rgba(80,240,255,0)');
     ctx.fillStyle = u;
     ctx.fillRect(M.x1, M.bottom, w, 420);
+  } else if (st.def.theme === 'cave') {
+    // rough stone floor
+    ctx.fillStyle = INK;
+    roundRect(ctx, M.x1 - 5, M.top - 5, w + 10, h + 10, 8);
+    ctx.fill();
+    const g = ctx.createLinearGradient(0, M.top, 0, M.bottom);
+    g.addColorStop(0, '#6b5a4e');
+    g.addColorStop(0.15, '#4a3c34');
+    g.addColorStop(1, '#221a16');
+    ctx.fillStyle = g;
+    roundRect(ctx, M.x1, M.top, w, h, 6);
+    ctx.fill();
+    // jagged top edge
+    ctx.fillStyle = '#7a695a';
+    ctx.beginPath();
+    ctx.moveTo(M.x1, M.top);
+    for (let x = M.x1; x <= M.x2; x += 46) {
+      const jag = 6 + hash(x * 0.01) * 10;
+      ctx.lineTo(x + 23, M.top - jag);
+      ctx.lineTo(x + 46, M.top);
+    }
+    ctx.lineTo(M.x2, M.top + 10);
+    ctx.lineTo(M.x1, M.top + 10);
+    ctx.closePath();
+    ctx.fill();
+    // cracks
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 6; i++) {
+      const cx = M.x1 + 60 + i * ((w - 120) / 5);
+      ctx.beginPath();
+      ctx.moveTo(cx, M.top + 20);
+      ctx.lineTo(cx + hash(i) * 30 - 15, M.top + 20 + hash(i + 1) * 40 + 20);
+      ctx.stroke();
+    }
+    // wall torches
+    for (let i = 0; i < 5; i++) {
+      const tx = M.x1 + 70 + i * ((w - 140) / 4);
+      wallTorch(ctx, tx, M.top + 6, t + i * 30);
+    }
+    for (const p of st.plats) rockLedge(ctx, p.x1, p.x2, p.y, t);
   } else {
     // stone pier with a plank deck
     ctx.fillStyle = INK;
@@ -387,6 +490,47 @@ function raft(ctx: CanvasRenderingContext2D, x1: number, x2: number, y: number, 
   ctx.fillStyle = `rgba(255,200,100,${0.25 + Math.sin(t * 0.08) * 0.08})`;
   ctx.beginPath();
   ctx.arc(cx, y - 60, 26, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function wallTorch(ctx: CanvasRenderingContext2D, x: number, y: number, t: number): void {
+  ctx.fillStyle = '#3a2a1c';
+  ctx.fillRect(x - 4, y, 8, 26);
+  const flick = 0.7 + Math.sin(t * 0.3) * 0.15 + Math.sin(t * 0.7) * 0.1;
+  const g = ctx.createRadialGradient(x, y - 4, 2, x, y - 4, 42 * flick);
+  g.addColorStop(0, 'rgba(255,210,120,0.5)');
+  g.addColorStop(1, 'rgba(255,140,50,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(x, y - 4, 42 * flick, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#ff8a3a';
+  ctx.beginPath();
+  ctx.moveTo(x - 6, y - 4);
+  ctx.quadraticCurveTo(x, y - 22 * flick, x + 5, y - 6);
+  ctx.quadraticCurveTo(x + 2, y - 12, x - 6, y - 4);
+  ctx.fill();
+  ctx.fillStyle = '#ffe27a';
+  ctx.beginPath();
+  ctx.moveTo(x - 3, y - 6);
+  ctx.quadraticCurveTo(x, y - 14 * flick, x + 2, y - 7);
+  ctx.fill();
+}
+
+function rockLedge(ctx: CanvasRenderingContext2D, x1: number, x2: number, y: number, t: number): void {
+  const w = x2 - x1;
+  ctx.fillStyle = INK;
+  roundRect(ctx, x1 - 4, y - 4, w + 8, 24, 6);
+  ctx.fill();
+  ctx.fillStyle = '#5a4a3e';
+  roundRect(ctx, x1, y, w, 16, 4);
+  ctx.fill();
+  ctx.fillStyle = '#7a695a';
+  ctx.fillRect(x1 + 4, y, w - 8, 4);
+  const glow = 0.5 + Math.sin(t * 0.05 + x1) * 0.25;
+  ctx.fillStyle = `rgba(255,160,80,${glow})`;
+  ctx.beginPath();
+  ctx.arc((x1 + x2) / 2, y + 9, 3, 0, Math.PI * 2);
   ctx.fill();
 }
 

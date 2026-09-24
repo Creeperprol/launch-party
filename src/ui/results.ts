@@ -59,7 +59,7 @@ export class ResultsScene implements Scene {
     const r = this.r;
     const wi = r.winner;
     const ws = r.config.slots[wi];
-    const wcol = ws.cpu > 0 ? mix(PLAYER_COLORS[ws.slot], CPU_GREY, 0.4) : PLAYER_COLORS[ws.slot];
+    const wcol = ws.cpu !== 0 ? mix(PLAYER_COLORS[ws.slot], CPU_GREY, 0.4) : PLAYER_COLORS[ws.slot];
     // backdrop: winner colour with rotating rays
     const g = ctx.createLinearGradient(0, 0, 0, VIEW_H);
     g.addColorStop(0, mix(wcol, '#000000', 0.35));
@@ -97,7 +97,7 @@ export class ResultsScene implements Scene {
     ctx.rotate(-0.04);
     label(ctx, `${ws.fighter.name} WINS!`, 0, 0, 120, { stroke: 20, color: '#ffffff' });
     ctx.restore();
-    label(ctx, ws.cpu > 0 ? `CPU  ·  LEVEL ${ws.cpu}` : `PLAYER ${ws.slot + 1}`, 100, 210, 34, { face: 'ui', weight: 800, stroke: 6, color: wcol });
+    label(ctx, ws.cpu === -1 ? 'TRAINING DUMMY' : ws.cpu > 0 ? `CPU  ·  LEVEL ${ws.cpu}` : `PLAYER ${ws.slot + 1}`, 100, 210, 34, { face: 'ui', weight: 800, stroke: 6, color: wcol });
     // standings
     const x0 = 930;
     const cols = [x0 + 520, x0 + 640, x0 + 760, x0 + 880];
@@ -108,7 +108,7 @@ export class ResultsScene implements Scene {
     r.placements.forEach((fi, place) => {
       const sl = r.config.slots[fi];
       const st = r.stats[fi];
-      const col = sl.cpu > 0 ? mix(PLAYER_COLORS[sl.slot], CPU_GREY, 0.5) : PLAYER_COLORS[sl.slot];
+      const col = sl.cpu !== 0 ? mix(PLAYER_COLORS[sl.slot], CPU_GREY, 0.5) : PLAYER_COLORS[sl.slot];
       const y = 350 + place * 130;
       const appear = Math.max(0, Math.min(1, (t - 10 - place * 6) / 14));
       ctx.save();
@@ -130,7 +130,7 @@ export class ResultsScene implements Scene {
       ctx.arc(x0 + 210, y + 55, 44, 0, Math.PI * 2);
       ctx.stroke();
       label(ctx, sl.fighter.name, x0 + 272, y + 56, 38, { stroke: 8 });
-      label(ctx, sl.cpu > 0 ? `CPU ${sl.cpu}` : `P${sl.slot + 1}`, x0 + 274, y + 88, 22, { face: 'ui', weight: 800, color: col, stroke: 5 });
+      label(ctx, sl.cpu === -1 ? 'DUMMY' : sl.cpu > 0 ? `CPU ${sl.cpu}` : `P${sl.slot + 1}`, x0 + 274, y + 88, 22, { face: 'ui', weight: 800, color: col, stroke: 5 });
       const vals = [st.kos, st.falls, st.sds, `${Math.round(st.dealt)}%`];
       vals.forEach((v, j) => label(ctx, String(v), cols[j], y + 70, 44, { align: 'center', stroke: 8 }));
       ctx.restore();

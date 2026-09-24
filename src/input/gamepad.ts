@@ -48,7 +48,7 @@ function btn(gp: GamepadLike, i: number): boolean {
 /**
  * Map a standard-layout gamepad to the input struct.
  * Left stick moves, right stick = smash/aerial ("C-stick"), bottom face = attack, right face = special,
- * left/top face = jump, bumpers = grab, triggers = shield. Stick y is flipped so +1 = up.
+ * left/top face = jump, bumpers = grab, triggers = dodge (no blocking — rolls/spot-dodges/techs). Stick y is flipped so +1 = up.
  */
 export function mapGamepad(gp: GamepadLike): InputFrame {
   let [x, y] = deadzone(gp.axes[0] ?? 0, -(gp.axes[1] ?? 0));

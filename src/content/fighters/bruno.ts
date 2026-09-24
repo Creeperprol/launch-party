@@ -84,7 +84,7 @@ const moves: Record<string, MoveDef> = {
   nspecial: {
     id: 'nspecial', total: 52,
     hitboxes: [
-      { g: 0, from: 16, to: 26, at: 'head', off: [30, -6], r: 58, dmg: 5, angle: 20, bkb: 80, kbg: 20, sfx: 'blunt', fx: 'shock', shieldDmg: 12 },
+      { g: 0, from: 16, to: 26, at: 'head', off: [30, -6], r: 58, dmg: 5, angle: 20, bkb: 80, kbg: 20, sfx: 'blunt', fx: 'shock' },
     ],
     anim: [{ f: 10, hip: [0, 36], lean: 20, hF: [20, 60], hB: [0, 60] }, { f: 16, hip: [0, 46], lean: -12, hF: [40, 110], hB: [-30, 110] }, { f: 26, hip: [0, 46], lean: -12, hF: [40, 110], hB: [-30, 110] }],
   },

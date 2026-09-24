@@ -1,7 +1,6 @@
 import {
   FASTFALL_MULT, JUMPSQUAT, LAUNCH_SCALE, LEDGE_ACT_DELAY, LEDGE_INTANGIBLE, LEDGE_MAX_HANG, LEDGE_REGRAB_COOLDOWN,
-  RESPAWN_INVULN, RESPAWN_PLATFORM_TIME, SHIELD_BREAK_DIZZY, SHIELD_DRAIN, SHIELD_DROP_FRAMES, SHIELD_MAX, SHIELD_REGEN,
-  TECH_WINDOW, TUMBLE_KB,
+  RESPAWN_INVULN, RESPAWN_PLATFORM_TIME, SHIELD_BREAK_DIZZY, TECH_WINDOW, TUMBLE_KB,
 } from './constants';
 import type { FighterDef, MoveDef } from './defs';
 import { InputState } from './input';
@@ -13,7 +12,7 @@ import type { LedgeRT } from './stage';
 
 export type State =
   | 'idle' | 'walk' | 'dash' | 'run' | 'runbrake' | 'runturn' | 'crouch' | 'jumpsquat' | 'air' | 'land'
-  | 'move' | 'shield' | 'shieldstun' | 'shielddrop' | 'shieldbreak' | 'dizzy'
+  | 'move' | 'shieldbreak' | 'dizzy'
   | 'hitstun' | 'tumble' | 'knockdown' | 'ledge' | 'helpless'
   | 'grabhold' | 'grabbed' | 'thrown' | 'grabrelease'
   | 'dead' | 'respawn';
@@ -96,8 +95,6 @@ export class Fighter {
   launchKb = 0;
   pendingLaunch: { speed: number; angle: number } | null = null;
   intangible = 0;
-  shieldHP = SHIELD_MAX;
-  shieldStun = 0;
   landLag = 0;
   helplessLag = 20;
   ledgeRef: LedgeRT | null = null;
@@ -181,10 +178,6 @@ export class Fighter {
     if (!this.alive()) return false;
     if (this.state === 'grabbed' || this.state === 'thrown') return false;
     return !this.intangibleNow();
-  }
-
-  shielding(): boolean {
-    return this.state === 'shield' || this.state === 'shieldstun';
   }
 
   counterActive(): MoveDef['counter'] | null {
@@ -370,9 +363,6 @@ export class Fighter {
       case 'runturn':
       case 'crouch':
       case 'land':
-      case 'shield':
-      case 'shieldstun':
-      case 'shielddrop':
       case 'dizzy':
       case 'grabrelease':
       case 'jumpsquat':
@@ -491,6 +481,18 @@ export class Fighter {
     return this.startMove(id, m);
   }
 
+  /** Tap-to-evade: a direction rolls, neutral spot-dodges. No blocking stance. */
+  tryDodge(m: Match): boolean {
+    const I = this.input;
+    if (!I.pressed('shield')) return false;
+    I.consume('shield');
+    if (Math.abs(I.cur.x) >= 0.5) {
+      const dir = Math.sign(I.cur.x);
+      return this.startMove(dir === this.facing ? 'rollF' : 'rollB', m);
+    }
+    return this.startMove('spotdodge', m);
+  }
+
   groundActions(m: Match): boolean {
     const I = this.input;
     const dashing = this.state === 'dash' || this.state === 'run';
@@ -503,10 +505,7 @@ export class Fighter {
       I.consume('grab');
       return this.startMove(dashing ? 'dashGrab' : 'grab', m);
     }
-    if (I.held('shield') && this.shieldHP > 0) {
-      this.enter('shield');
-      return true;
-    }
+    if (this.tryDodge(m)) return true;
     if (I.pressed('special')) return this.doSpecial(m);
     const sm = this.smashInput();
     if (sm) {
@@ -591,9 +590,6 @@ export class Fighter {
     if (this.ledgeCooldown > 0) this.ledgeCooldown--;
     if (this.platIgnoreTimer > 0) this.platIgnoreTimer--;
     if (this.djFrames < 999) this.djFrames++;
-    if (!this.shielding() && this.shieldHP < SHIELD_MAX && this.state !== 'dizzy') {
-      this.shieldHP = Math.min(SHIELD_MAX, this.shieldHP + SHIELD_REGEN);
-    }
     this.update(m);
     m.physics(this);
     // KO credit only lasts until the fighter is back on solid ground and actionable.
@@ -641,7 +637,6 @@ export class Fighter {
     this.airdodgeUsed = false;
     this.sideBUsed = false;
     this.ledgeIntUsed = false;
-    this.shieldStun = 0;
   }
 
   update(m: Match): void {
@@ -731,10 +726,7 @@ export class Fighter {
           this.enter('jumpsquat');
           break;
         }
-        if (I.held('shield') && this.shieldHP > 0) {
-          this.enter('shield');
-          break;
-        }
+        if (this.tryDodge(m)) break;
         this.traction(1.2);
         if (this.sf >= 12 || Math.abs(this.vx) < 0.5) this.enter('idle');
         break;
@@ -805,63 +797,6 @@ export class Fighter {
       case 'move':
         this.updateMove(m);
         break;
-      case 'shield': {
-        this.traction();
-        this.shieldHP -= SHIELD_DRAIN;
-        if (this.shieldHP <= 0) {
-          m.shieldBreak(this);
-          break;
-        }
-        if (!I.held('shield')) {
-          this.enter('shielddrop');
-          break;
-        }
-        if (I.pressed('jump')) {
-          I.consume('jump');
-          this.enter('jumpsquat');
-          break;
-        }
-        if (I.pressed('grab') || I.pressed('attack')) {
-          I.consume('grab');
-          I.consume('attack');
-          this.startMove('grab', m);
-          break;
-        }
-        if (I.pressed('special') && this.stickDir() === 'u') {
-          this.doSpecial(m);
-          break;
-        }
-        const sm = this.smashInput();
-        if (sm === 'u') {
-          this.startSmash('u', m);
-          break;
-        }
-        const fx = I.flickX(4);
-        if (fx !== 0) {
-          I.consumeFlickX();
-          this.startMove(fx === this.facing ? 'rollF' : 'rollB', m);
-          break;
-        }
-        if (I.flickY(4) === -1) {
-          I.consumeFlickY();
-          this.startMove('spotdodge', m);
-          break;
-        }
-        break;
-      }
-      case 'shieldstun': {
-        this.traction(0.6);
-        if (--this.shieldStun <= 0) this.enter(I.held('shield') ? 'shield' : 'shielddrop');
-        break;
-      }
-      case 'shielddrop': {
-        this.traction();
-        if (this.sf >= SHIELD_DROP_FRAMES) {
-          this.enter('idle');
-          this.groundActions(m);
-        }
-        break;
-      }
       case 'shieldbreak': {
         this.vx = approach(this.vx, 0, 0.1);
         break;
@@ -869,7 +804,6 @@ export class Fighter {
       case 'dizzy': {
         this.traction();
         if (this.sf >= SHIELD_BREAK_DIZZY) {
-          this.shieldHP = 30;
           this.enter('idle');
         }
         break;
@@ -1225,7 +1159,7 @@ export class Fighter {
     };
   }
 
-  /** Recompute pose, hurtboxes, shield, and active hitboxes. */
+  /** Recompute pose, hurtboxes, and active hitboxes. */
   computeBoxes(): void {
     poseTargets(this.def.rig, this.poseCtx(), this.poseT);
     resolvePose(this.def.rig, this.poseT, this.pose, this.weaponLen());
@@ -1247,9 +1181,10 @@ export class Fighter {
     setCap(this.hurt[3], P.shB.x, P.shB.y, P.hdB.x, P.hdB.y, r.limbR + 1.5);
     setCap(this.hurt[4], P.hipF.x, P.hipF.y, P.ftF.x, P.ftF.y, r.limbR * 1.35);
     setCap(this.hurt[5], P.hipB.x, P.hipB.y, P.ftB.x, P.ftB.y, r.limbR * 1.35);
+    // Body-centre point/radius, used by reflect moves (the old shield stance is gone).
     this.shieldX = X + P.center.x * f;
     this.shieldY = Y - P.center.y;
-    this.shieldR = Math.max(this.W, this.H) * 0.62 * (0.3 + 0.7 * Math.max(0, this.shieldHP) / SHIELD_MAX);
+    this.shieldR = Math.max(this.W, this.H) * 0.62;
     this.hits.length = 0;
     const mv = this.move;
     if (!mv || this.state !== 'move') return;

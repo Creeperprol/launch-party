@@ -170,8 +170,8 @@ const moves: Record<string, MoveDef> = {
   nspecial: {
     id: 'nspecial', total: 44, charge: { frame: 8, btn: 'special', max: 60 },
     hitboxes: [
-      { g: 0, from: 12, to: 15, at: 'blade', t: 1, r: 18, dmg: 8, angle: 38, bkb: 30, kbg: 70, sfx: 'tip', fx: 'swoosh', charge: { dmg: [8, 22], bkb: [30, 60], kbg: [70, 90], shieldDmg: [0, 100] } },
-      { g: 0, from: 12, to: 15, at: 'blade', t: 0.55, r: 16, dmg: 7, angle: 38, bkb: 30, kbg: 70, sfx: 'slash', fx: 'swoosh', charge: { dmg: [7, 19], bkb: [30, 55], kbg: [70, 88], shieldDmg: [0, 100] } },
+      { g: 0, from: 12, to: 15, at: 'blade', t: 1, r: 18, dmg: 8, angle: 38, bkb: 30, kbg: 70, sfx: 'tip', fx: 'swoosh', charge: { dmg: [8, 22], bkb: [30, 60], kbg: [70, 90] } },
+      { g: 0, from: 12, to: 15, at: 'blade', t: 0.55, r: 16, dmg: 7, angle: 38, bkb: 30, kbg: 70, sfx: 'slash', fx: 'swoosh', charge: { dmg: [7, 19], bkb: [30, 55], kbg: [70, 88] } },
     ],
     anim: [
       { f: 5, hF: [-10, 66], w: 0, lean: -10, fF: [22, 0], fB: [-24, 0] },

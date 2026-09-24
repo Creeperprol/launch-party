@@ -10,12 +10,8 @@ export const HITSTUN_MULT = 0.4;
 export const MAX_HITLAG = 20;
 export const DI_MAX_DEG = 15;
 
-export const SHIELD_MAX = 50;
-export const SHIELD_DRAIN = 0.15;
-export const SHIELD_REGEN = 0.08;
-export const SHIELD_DMG_MULT = 1.2;
+/** Kept only so the (now unreachable) post-shieldbreak dizzy stagger still compiles. */
 export const SHIELD_BREAK_DIZZY = 180;
-export const SHIELD_DROP_FRAMES = 7;
 
 export const BUFFER_FRAMES = 5;
 export const JUMPSQUAT = 3;

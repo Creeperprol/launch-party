@@ -107,7 +107,7 @@ const moves: Record<string, MoveDef> = {
   },
   dspecial: {
     id: 'dspecial', total: 46,
-    hitboxes: [{ g: 0, from: 14, to: 18, at: 'center', r: 52, dmg: 9, angle: 70, bkb: 56, kbg: 46, sfx: 'spark', fx: 'spark', shieldDmg: 14 }],
+    hitboxes: [{ g: 0, from: 14, to: 18, at: 'center', r: 52, dmg: 9, angle: 70, bkb: 56, kbg: 46, sfx: 'spark', fx: 'spark' }],
     anim: [{ f: 8, hip: [0, 18], lean: 30, hF: [20, 20], hB: [-20, 20] }, { f: 14, hip: [0, 32], lean: -10, hF: [40, 70], hB: [-40, 70] }, { f: 24, hip: [0, 32], hF: [40, 70], hB: [-40, 70] }],
   },
 };

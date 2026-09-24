@@ -10,7 +10,7 @@ const ROWS: [string, (k: typeof KB1) => string[], string[]][] = [
   ['JUMP', (k) => [keyLabel(k.jump)], ['X / Y  (left & top face)']],
   ['ATTACK', (k) => [keyLabel(k.attack)], ['A  (bottom face)']],
   ['SPECIAL', (k) => [keyLabel(k.special)], ['B  (right face)']],
-  ['SHIELD', (k) => [keyLabel(k.shield)], ['Triggers  (LT / RT)']],
+  ['DODGE', (k) => [keyLabel(k.shield)], ['Triggers  (LT / RT)']],
   ['GRAB', (k) => [keyLabel(k.grab)], ['Bumpers  (LB / RB)']],
   ['SMASH', (k) => [keyLabel(k.smash)], ['Right stick', 'or flick + A']],
   ['PAUSE', () => ['Esc'], ['Start']],
@@ -19,8 +19,8 @@ const ROWS: [string, (k: typeof KB1) => string[], string[]][] = [
 const TIPS = [
   'Tilt attacks: attack + direction.  Smash attacks: smash + direction (hold to charge) — on a pad, flick the stick + attack or use the right stick.',
   'Specials: special + neutral / side / up / down.  Up special recovers — then you fall helpless until you land or grab a ledge.',
-  'Shield + left/right rolls, shield + down spot-dodges, shield in the air air-dodges.  Shield just before landing in tumble to tech.',
-  'Grab (or shield + attack) → attack to pummel, direction to throw.  On a ledge: toward/up climbs, jump, shield rolls, attack attacks.',
+  'There is no blocking — dodge + a direction rolls, dodge alone spot-dodges, dodge in the air air-dodges.  Dodge just before landing in tumble to tech.',
+  'Grab → attack to pummel, direction to throw.  On a ledge: toward/up climbs, jump, dodge rolls onto the stage, attack attacks.',
   'Knock foes past the blast zones to take a stock. Higher damage % means bigger launches.   Global: ` debug overlay · P fps only · M mute.',
 ];
 

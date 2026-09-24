@@ -48,7 +48,7 @@ export function drawHud(ctx: CanvasRenderingContext2D, m: Match, r: MatchRendere
   for (let i = 0; i < n; i++) {
     const f = m.fighters[i];
     const p = r.players[i];
-    const col = p.cpu > 0 ? CPU_GREY : PLAYER_COLORS[p.slot % 4];
+    const col = p.cpu !== 0 ? CPU_GREY : PLAYER_COLORS[p.slot % 4];
     const x = x0 + i * (cardW + gap);
     const out = f.eliminated;
     ctx.save();
@@ -84,7 +84,7 @@ export function drawHud(ctx: CanvasRenderingContext2D, m: Match, r: MatchRendere
     ctx.fillText(f.def.name, x + 120, y0 + 30);
     ctx.font = `800 16px ${FONT_UI}`;
     ctx.fillStyle = 'rgba(255,255,255,0.8)';
-    ctx.fillText(p.cpu > 0 ? `CPU  LV ${p.cpu}` : `P${p.slot + 1}`, x + 120, y0 + 50);
+    ctx.fillText(p.cpu === -1 ? 'DUMMY' : p.cpu > 0 ? `CPU  LV ${p.cpu}` : `P${p.slot + 1}`, x + 120, y0 + 50);
     // percent
     const shake = r.hudShake[i];
     const sx = (Math.random() * 2 - 1) * shake;

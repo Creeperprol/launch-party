@@ -4,7 +4,7 @@ import type { DeviceId } from '../input/devices';
 import type { Rules } from '../sim/match';
 import type { MatchConfig, SlotConfig } from './matchScene';
 
-export type SlotType = 'off' | 'human' | 'cpu';
+export type SlotType = 'off' | 'human' | 'cpu' | 'dummy';
 
 export interface SlotState {
   type: SlotType;
@@ -33,7 +33,7 @@ export class Session {
 
   canStart(): boolean {
     const act = this.active();
-    return act.length >= 2 && act.every((i) => this.slots[i].type === 'cpu' || this.slots[i].ready);
+    return act.length >= 2 && act.every((i) => this.slots[i].type === 'cpu' || this.slots[i].type === 'dummy' || this.slots[i].ready);
   }
 
   /** Resolve randoms and duplicate costumes into a concrete match config. */
@@ -51,7 +51,8 @@ export class Session {
       const fi = s.fighter < 0 ? rand(FIGHTERS.length) : s.fighter;
       const pal = used.get(fi) ?? 0;
       used.set(fi, pal + 1);
-      slots.push({ slot: i, device: s.type === 'human' ? s.device : null, cpu: s.type === 'cpu' ? s.level : 0, fighter: FIGHTERS[fi], palette: pal % 4 });
+      const cpu = s.type === 'cpu' ? s.level : s.type === 'dummy' ? -1 : 0;
+      slots.push({ slot: i, device: s.type === 'human' ? s.device : null, cpu, fighter: FIGHTERS[fi], palette: pal % 4 });
     }
     const stage = this.stage < 0 ? STAGES[rand(STAGES.length)] : STAGES[this.stage];
     const cfg: MatchConfig = { slots, stage, rules: { ...this.rules }, seed };

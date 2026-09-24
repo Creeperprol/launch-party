@@ -186,21 +186,6 @@ function statePose(r: Rig, c: PoseCtx, p: PoseT): void {
       p.w = r.weapon?.rest ?? -20;
       return;
     }
-    case 'shield':
-    case 'shieldstun':
-    case 'shielddrop': {
-      standBase(r, p);
-      p.hy = r.hipH * 0.84;
-      p.lean = 12;
-      p.fFx = r.hipH * 0.36;
-      p.fBx = -r.hipH * 0.36;
-      p.hFx = a * 0.42;
-      p.hFy = r.hipH + r.torso * 0.75;
-      p.hBx = a * 0.3;
-      p.hBy = r.hipH + r.torso * 0.55;
-      p.w = 70;
-      return;
-    }
     case 'air':
     case 'helpless':
     case 'shieldbreak': {

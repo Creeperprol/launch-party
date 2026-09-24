@@ -222,10 +222,6 @@ export class CpuController {
     if (st === 'tumble') {
       this.maybeTech(m, me, out);
     }
-    if (st === 'shield' || st === 'shieldstun') {
-      this.inShield(m, me, out);
-      return;
-    }
     if (this.frame < this.waitUntil) return;
     if (this.frame < this.nextDecision) {
       this.keepMoving(m, me, out);
@@ -277,20 +273,12 @@ export class CpuController {
       return;
     }
     const seenT = this.seen(T.idx);
-    // 1. defend against an incoming attack we can see
-    if (this.threatened(m, me, T, seenT)) {
-      const r = this.rng.next();
-      if (r < this.sk.shield) {
-        this.holdBtn.shield = 8 + this.rng.int(10);
-        out.shield = true;
-        return;
-      }
-      if (r < this.sk.shield + this.sk.dodge) {
-        out.shield = true;
-        this.holdBtn.shield = 2;
-        this.flick(out, 0, -1);
-        return;
-      }
+    // 1. evade an incoming attack we can see (no blocking stance any more — just dodge)
+    if (this.threatened(m, me, T, seenT) && this.rng.chance(this.sk.shield + this.sk.dodge)) {
+      const away = Math.sign(me.x - T.x) || (this.rng.chance(0.5) ? 1 : -1);
+      out.x = away;
+      this.press(out, 'shield');
+      return;
     }
     // 2. edge-guard an opponent who is recovering
     if (this.offstage(m, T) && !T.grounded && T.state !== 'respawn' && this.rng.chance(this.sk.edgeguard)) {
@@ -299,11 +287,6 @@ export class CpuController {
     // 4. attack if something connects
     const punish = this.vulnerable(seenT) && this.rng.chance(this.sk.punish);
     if (this.rng.chance(this.sk.aggression) || punish) {
-      if (seenT.state === 'shield' && T.shielding() && this.level >= 4 && Math.abs(T.x - me.x) < me.W / 2 + T.W / 2 + 30 && this.rng.chance(0.6)) {
-        this.faceToward(me, T, out);
-        this.press(out, 'grab');
-        return;
-      }
       const pick = this.pickGroundAttack(m, me, T);
       if (pick) {
         this.execute(me, T, pick, out);
@@ -580,29 +563,9 @@ export class CpuController {
   }
 
   private vulnerable(s: Snap): boolean {
-    if (s.state === 'land' || s.state === 'shielddrop' || s.state === 'dizzy' || s.state === 'knockdown') return true;
+    if (s.state === 'land' || s.state === 'dizzy' || s.state === 'knockdown') return true;
     if (s.state === 'move' && s.moveId) return false;
     return false;
-  }
-
-  private inShield(m: Match, me: Fighter, out: InputFrame): void {
-    const T = this.target(m, me);
-    // out-of-shield options once the attacker is in endlag
-    if (me.state === 'shield' && T && this.level >= 5) {
-      const s = this.seen(T.idx);
-      const close = Math.abs(T.x - me.x) < me.W / 2 + T.W / 2 + 40;
-      if (close && s.state === 'move' && s.moveId) {
-        const info = moveInfos(T.def).get(s.moveId);
-        if (info && s.moveFrame > info.activeEnd && this.rng.chance(this.sk.punish + 0.2)) {
-          this.holdBtn.shield = 0;
-          this.faceToward(me, T, out);
-          if (this.rng.chance(0.5)) this.press(out, 'grab');
-          else out.cy = 1;
-          return;
-        }
-      }
-    }
-    if (me.state === 'shieldstun' || (this.holdBtn.shield ?? 0) > 0) out.shield = true;
   }
 
   // ------------------------------------------------------------------ edge-guarding

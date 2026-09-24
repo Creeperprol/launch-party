@@ -110,7 +110,7 @@ export class CharSelectScene implements Scene {
       case 'type':
         return !!sl && (sl.type !== 'human' || !cur || cur.slot === e.arg);
       case 'fighter':
-        return !!sl && (sl.type === 'cpu' || (sl.type === 'human' && (!cur || cur.slot === e.arg)));
+        return !!sl && (sl.type === 'cpu' || sl.type === 'dummy' || (sl.type === 'human' && (!cur || cur.slot === e.arg)));
       case 'level':
         return !!sl && sl.type === 'cpu';
       case 'touchjoin':
@@ -198,6 +198,8 @@ export class CharSelectScene implements Scene {
           sl.ready = true;
           sl.device = null;
         } else if (sl.type === 'cpu') {
+          sl.type = 'dummy';
+        } else if (sl.type === 'dummy') {
           sl.type = 'off';
         } else if (!cur || cur.slot === e.arg) {
           this.leave(sl.device!);
@@ -376,7 +378,7 @@ export class CharSelectScene implements Scene {
       ctx.restore();
     } else {
       const touchHint = isTouchCapable() ? '  ·  tap PLAY HERE (TOUCH) on a card' : '';
-      const hint = `JOIN:  F (Keys 1)  ·  ' (Keys 2)  ·  A (gamepad)${touchHint}      ADD CPU: select an empty card      PICK: select a fighter`;
+      const hint = `JOIN:  F (Keys 1)  ·  ' (Keys 2)  ·  A (gamepad)${touchHint}      ADD CPU: select an empty card (again for a training DUMMY)      PICK: select a fighter`;
       const left = 250;
       const room = VIEW_W - left - 30;
       ctx.font = font(24, 'ui', 700);
@@ -479,7 +481,8 @@ export class CharSelectScene implements Scene {
       return;
     }
     const cpu = sl.type === 'cpu';
-    const base = cpu ? mix(col, CPU_GREY, 0.55) : col;
+    const dummy = sl.type === 'dummy';
+    const base = cpu || dummy ? mix(col, CPU_GREY, 0.55) : col;
     const g = ctx.createLinearGradient(r.x, r.y, r.x, r.y + r.h);
     g.addColorStop(0, mix(base, '#ffffff', 0.08));
     g.addColorStop(1, mix(base, INK, 0.55));
@@ -505,7 +508,7 @@ export class CharSelectScene implements Scene {
     // type button
     const tb = this.byId.get(`type:${i}`)!;
     slab(ctx, tb.rect, INK, { shadow: 0, outline: 0 });
-    const typeText = cpu ? 'CPU' : deviceLabel(sl.device!);
+    const typeText = cpu ? 'CPU' : dummy ? 'DUMMY' : deviceLabel(sl.device!);
     label(ctx, `P${i + 1}`, tb.rect.x + 22, tb.rect.y + 44, 38, { color: col, stroke: 0 });
     label(ctx, typeText, tb.rect.x + tb.rect.w - 20, tb.rect.y + 42, 30, { align: 'right', face: 'ui', weight: 800 });
     // fighter selector
@@ -525,6 +528,11 @@ export class CharSelectScene implements Scene {
         ctx.fillStyle = k < sl.level ? '#ffe066' : 'rgba(255,255,255,0.18)';
         ctx.fillRect(lb.rect.x + 70 + k * 30, lb.rect.y + 50, 24, 5);
       }
+    } else if (dummy) {
+      slab(ctx, lb.rect, 'rgba(10,8,22,0.82)', { shadow: 0, outline: 4 });
+      label(ctx, 'STANDS STILL — TAKES HITS', lb.rect.x + lb.rect.w / 2, lb.rect.y + 42, 24, {
+        align: 'center', stroke: 6, color: 'rgba(255,255,255,0.75)',
+      });
     } else {
       const ready = sl.ready;
       label(ctx, ready ? 'READY!' : 'PICK A FIGHTER', lb.rect.x + lb.rect.w / 2, lb.rect.y + 42, ready ? 44 : 30, {

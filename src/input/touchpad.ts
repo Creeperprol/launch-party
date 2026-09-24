@@ -4,11 +4,11 @@ import { GLYPH_COLOR, drawGlyph, drawPauseGlyph } from './touchIcons';
 import { clamp } from '../sim/math';
 import { neutralInput, type InputFrame } from '../sim/input';
 
-/** No grab button: shield + attack grabs, same as every other input device. */
-export type TouchBtn = 'jump' | 'attack' | 'special' | 'shield' | 'smash';
+/** 'shield' has no blocking stance any more — it just triggers a dodge/roll/tech, same as every other device. */
+export type TouchBtn = 'jump' | 'attack' | 'special' | 'shield' | 'smash' | 'grab';
 
-const BTN_KEYS: readonly TouchBtn[] = ['jump', 'attack', 'special', 'shield', 'smash'];
-const BTN_LABEL: Record<TouchBtn, string> = { jump: 'JUMP', attack: 'ATTACK', special: 'SPECIAL', shield: 'SHIELD', smash: 'SMASH' };
+const BTN_KEYS: readonly TouchBtn[] = ['jump', 'attack', 'special', 'shield', 'smash', 'grab'];
+const BTN_LABEL: Record<TouchBtn, string> = { jump: 'JUMP', attack: 'ATTACK', special: 'SPECIAL', shield: 'DODGE', smash: 'SMASH', grab: 'GRAB' };
 /** Touches left of this line that miss every control become a floating joystick. */
 const STICK_ZONE_X = VIEW_W * 0.45;
 
@@ -31,8 +31,9 @@ const DEFAULT_LAYOUT: TouchLayout = {
     jump: { x: 1590, y: 700 },
     special: { x: 1710, y: 700 },
     smash: { x: 1830, y: 700 },
-    shield: { x: 1620, y: 840 },
-    attack: { x: 1780, y: 840 },
+    shield: { x: 1560, y: 840 },
+    attack: { x: 1710, y: 840 },
+    grab: { x: 1860, y: 840 },
   },
   pause: { x: 60, y: 60 },
 };
@@ -59,8 +60,9 @@ export class TouchPad {
     jump: { ...DEFAULT_LAYOUT.buttons.jump, r: 58 },
     special: { ...DEFAULT_LAYOUT.buttons.special, r: 58 },
     smash: { ...DEFAULT_LAYOUT.buttons.smash, r: 58 },
-    shield: { ...DEFAULT_LAYOUT.buttons.shield, r: 58 },
-    attack: { ...DEFAULT_LAYOUT.buttons.attack, r: 70 },
+    shield: { ...DEFAULT_LAYOUT.buttons.shield, r: 54 },
+    attack: { ...DEFAULT_LAYOUT.buttons.attack, r: 66 },
+    grab: { ...DEFAULT_LAYOUT.buttons.grab, r: 54 },
   };
   readonly pause: Circle = { x: DEFAULT_LAYOUT.pause.x, y: DEFAULT_LAYOUT.pause.y, r: 40 };
 
@@ -74,7 +76,7 @@ export class TouchPad {
   private drawX = 0;
   private drawY = 0;
   private btnPointer = new Map<TouchBtn, number>();
-  private held: Record<TouchBtn, boolean> = { jump: false, attack: false, special: false, shield: false, smash: false };
+  private held: Record<TouchBtn, boolean> = { jump: false, attack: false, special: false, shield: false, smash: false, grab: false };
   private pausePointer: number | null = null;
   private pauseTapped = false;
   private pauseHeld = false;
@@ -266,7 +268,7 @@ export class TouchPad {
     return {
       x: this.stickX, y: this.stickY, cx: 0, cy: 0,
       jump: this.held.jump, attack: this.held.attack, special: this.held.special,
-      shield: this.held.shield, grab: false, smash: this.held.smash,
+      shield: this.held.shield, grab: this.held.grab, smash: this.held.smash,
       digital: true,
     };
   }
@@ -331,10 +333,6 @@ export class TouchPad {
       ctx.fillStyle = pressed ? '#15111f' : 'rgba(255,255,255,0.9)';
       ctx.fillText(BTN_LABEL[b], c.x, c.y + r * 0.58);
     }
-    const sh = this.buttons.shield;
-    ctx.font = '800 15px "Avenir Next", "Futura", "Helvetica Neue", Arial, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    ctx.fillText('+ATK = GRAB', sh.x, sh.y + sh.r + 16);
     // pause
     ctx.fillStyle = this.pauseHeld ? 'rgba(255,224,102,0.85)' : 'rgba(20,16,40,0.5)';
     ctx.strokeStyle = this.editTarget === this.pause ? '#ffe066' : 'rgba(255,255,255,0.6)';

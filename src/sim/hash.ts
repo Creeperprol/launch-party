@@ -18,7 +18,7 @@ export function hashMatch(m: Match): string {
     add(f.x); add(f.y); add(f.vx); add(f.vy); add(f.kbx); add(f.kby);
     add(f.percent); add(f.stocks); add(f.state); add(f.sf); add(f.facing);
     add(f.move ? f.move.id + ':' + f.move.frame : '-');
-    add(f.shieldHP); add(f.hitlag); add(f.hitstun);
+    add(f.hitlag); add(f.hitstun);
   }
   for (const p of m.projectiles) { add(p.kind); add(p.x); add(p.y); }
   add(m.rng.s);
