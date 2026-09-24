@@ -39,8 +39,9 @@ interface Skill {
 function skillFor(level: number): Skill {
   const k = (clamp(level, 1, 9) - 1) / 8;
   return {
-    reaction: Math.round(lerp(30, 5, k)),
-    decide: Math.round(lerp(18, 2, k)),
+    // Human-like: ~0.6 s at level 1 down to ~0.23 s at level 9 (never frame-perfect).
+    reaction: Math.round(lerp(36, 14, k)),
+    decide: Math.round(lerp(24, 6, k)),
     aggression: lerp(0.35, 0.95, k),
     accuracy: lerp(0.35, 0.97, k),
     shield: level <= 3 ? 0.06 : lerp(0.2, 0.75, k),
@@ -77,6 +78,7 @@ export class CpuController {
   private knockdownAt = -1;
   private respawnAt = -1;
   private lastState = '';
+  private lastPhase = '';
   private infos: Map<string, MoveInfo> | null = null;
   private rec: Recovery | null = null;
 
@@ -95,6 +97,9 @@ export class CpuController {
       this.rec = measureRecovery(me.def);
     }
     this.record(m);
+    // hesitate a moment at GO! instead of acting on the very first frame
+    if (m.phase === 'play' && this.lastPhase !== 'play') this.waitUntil = this.frame + this.sk.reaction + this.rng.int(20);
+    this.lastPhase = m.phase;
     const out = neutralInput();
     if (m.phase !== 'play' || !me.alive() || me.eliminated) return this.emit(out);
     if (me.state !== this.lastState) this.onStateChange(me);
@@ -150,6 +155,7 @@ export class CpuController {
     if (me.state === 'ledge') this.ledgeDecideAt = this.frame + this.sk.reaction + this.rng.int(12);
     if (me.state === 'knockdown') this.knockdownAt = this.frame + 8 + this.rng.int(this.sk.reaction + 10);
     if (me.state === 'respawn') this.respawnAt = this.frame + 30 + this.rng.int(60);
+    if (this.lastState === 'respawn' && me.state !== 'respawn') this.waitUntil = this.frame + 10 + this.rng.int(this.sk.reaction);
     if (me.state !== 'move' && me.state !== 'helpless') this.recoverDir = null;
   }
 
@@ -225,7 +231,7 @@ export class CpuController {
       this.keepMoving(m, me, out);
       return;
     }
-    this.nextDecision = this.frame + this.sk.decide + this.rng.int(2);
+    this.nextDecision = this.frame + this.sk.decide + this.rng.int(Math.max(2, this.sk.decide >> 1));
     if (me.grounded) this.groundBrain(m, me, out);
     else this.airBrain(m, me, out);
   }
@@ -293,7 +299,7 @@ export class CpuController {
     // 4. attack if something connects
     const punish = this.vulnerable(seenT) && this.rng.chance(this.sk.punish);
     if (this.rng.chance(this.sk.aggression) || punish) {
-      if (T.shielding() && this.level >= 4 && Math.abs(T.x - me.x) < me.W / 2 + T.W / 2 + 30 && this.rng.chance(0.6)) {
+      if (seenT.state === 'shield' && T.shielding() && this.level >= 4 && Math.abs(T.x - me.x) < me.W / 2 + T.W / 2 + 30 && this.rng.chance(0.6)) {
         this.faceToward(me, T, out);
         this.press(out, 'grab');
         return;
