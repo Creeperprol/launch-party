@@ -6,7 +6,7 @@ import { commonMoves, grabMoves, leaveGround } from '../kit';
 const rig: Rig = {
   hipH: 38, torso: 32, headR: 15, arm1: 17, arm2: 16, leg1: 21, leg2: 20,
   bodyR: 16, limbR: 5.5, handR: 7, footR: 7.5,
-  weapon: { len: 34, width: 6 },
+  weapon: { len: 34, width: 6, rest: 65, run: 40 },
 };
 const W = 58;
 const H = 112;
@@ -33,7 +33,7 @@ const moves: Record<string, MoveDef> = {
   dtilt: {
     id: 'dtilt', total: 22,
     hitboxes: [pan(0, 6, 9, 7, 22, 66)],
-    anim: [{ f: 3, hip: [0, 26], lean: 30, w: 40 }, { f: 6, hip: [0, 26], lean: 30, w: -60 }],
+    anim: [{ f: 3, hip: [0, 26], lean: 30, w: 40 }, { f: 6, hip: [0, 26], lean: 30, w: -60 }, { f: 9, hip: [0, 26], lean: 30, w: -60 }],
   },
   dashAttack: {
     id: 'dashAttack', total: 36,

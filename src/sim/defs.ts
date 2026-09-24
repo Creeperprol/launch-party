@@ -167,7 +167,8 @@ export interface Rig {
   limbR: number;
   handR: number;
   footR: number;
-  weapon?: { len: number; width: number };
+  /** rest / run: carry angle (deg, 0 = forward, 90 = up) outside of attacks. */
+  weapon?: { len: number; width: number; rest?: number; run?: number };
 }
 
 export interface Palette {

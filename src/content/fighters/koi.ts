@@ -6,7 +6,7 @@ import { commonMoves, grabMoves, leaveGround } from '../kit';
 const rig: Rig = {
   hipH: 38, torso: 27, headR: 13, arm1: 16, arm2: 15, leg1: 23, leg2: 22,
   bodyR: 10, limbR: 4.4, handR: 5.6, footR: 6,
-  weapon: { len: 68, width: 5 },
+  weapon: { len: 68, width: 5, rest: 82, run: 160 },
 };
 const W = 46;
 const H = 90;
@@ -74,7 +74,7 @@ const moves: Record<string, MoveDef> = {
   fair: {
     id: 'fair', total: 32, air: true, landingLag: 9,
     hitboxes: [{ g: 0, from: 7, to: 10, at: 'blade', t: 0.95, r: 17, dmg: 11, angle: 40, bkb: 28, kbg: 80, sfx: 'tip', fx: 'water' }],
-    anim: [{ f: 3, w: 40, hF: [0, 64], lean: -8 }, { f: 7, w: 0, hF: [46, 56], lean: 12 }],
+    anim: [{ f: 3, w: 40, hF: [0, 64], lean: -8 }, { f: 7, w: 0, hF: [46, 56], lean: 12 }, { f: 10, w: 0, hF: [46, 56], lean: 12 }],
   },
   bair: {
     id: 'bair', total: 30, air: true, landingLag: 9,

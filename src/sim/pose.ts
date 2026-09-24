@@ -84,7 +84,7 @@ export function standBase(r: Rig, out: PoseT = blankPose()): PoseT {
   out.fFy = 0;
   out.fBx = -r.hipH * 0.28;
   out.fBy = 0;
-  out.w = -40;
+  out.w = r.weapon?.rest ?? -40;
   out.spin = 0;
   return out;
 }
@@ -103,7 +103,7 @@ export function airBase(r: Rig, out: PoseT = blankPose()): PoseT {
   out.fFy = r.hipH * 0.3;
   out.fBx = -r.hipH * 0.22;
   out.fBy = r.hipH * 0.18;
-  out.w = -25;
+  out.w = r.weapon?.rest ?? -25;
   out.spin = 0;
   return out;
 }
@@ -147,7 +147,7 @@ function statePose(r: Rig, c: PoseCtx, p: PoseT): void {
       p.hFy = r.hipH + r.torso * (running ? 0.55 : 0.4) + Math.abs(Math.cos(ph)) * 4;
       p.hBx = Math.sin(ph) * sw - a * 0.05;
       p.hBy = r.hipH + r.torso * (running ? 0.5 : 0.38);
-      p.w = running ? -150 : -60;
+      p.w = running ? r.weapon?.run ?? -150 : r.weapon?.rest ?? -60;
       return;
     }
     case 'runbrake': {
@@ -183,7 +183,7 @@ function statePose(r: Rig, c: PoseCtx, p: PoseT): void {
       p.hFy = p.hy + r.torso * 0.5;
       p.hBx = -a * 0.05;
       p.hBy = p.hy + r.torso * 0.35;
-      p.w = -20;
+      p.w = r.weapon?.rest ?? -20;
       return;
     }
     case 'shield':

@@ -6,7 +6,7 @@ import { commonMoves, grabMoves, leaveGround } from '../kit';
 const rig: Rig = {
   hipH: 40, torso: 30, headR: 13, arm1: 17, arm2: 16, leg1: 24, leg2: 23,
   bodyR: 11, limbR: 4.6, handR: 6, footR: 6.5,
-  weapon: { len: 92, width: 5 },
+  weapon: { len: 92, width: 5, rest: 80, run: 165 },
 };
 const W = 50;
 const H = 96;
