@@ -3,10 +3,11 @@ import type { Fighter } from '../../sim/fighter';
 import type { Match } from '../../sim/match';
 import { commonMoves, grabMoves, leaveGround } from '../kit';
 
-/** TALUS — stone golem. The heaviest, slowest fighter; huge armored hits. */
+/** TALUS — stone golem with a warhammer. The heaviest, slowest fighter; huge armored hits. */
 const rig: Rig = {
   hipH: 48, torso: 46, headR: 20, arm1: 26, arm2: 25, leg1: 26, leg2: 25,
   bodyR: 30, limbR: 10.5, handR: 13, footR: 13,
+  weapon: { len: 62, width: 9 },
 };
 const W = 88;
 const H = 132;
@@ -18,9 +19,9 @@ const moves: Record<string, MoveDef> = {
     anim: [{ f: 3, hF: [22, 84], lean: 8 }, { f: 6, hF: [62, 82], lean: 16 }, { f: 10, hF: [58, 80], lean: 16 }],
   },
   ftilt: {
-    id: 'ftilt', total: 38,
-    hitboxes: [{ g: 0, from: 10, to: 13, at: 'handF', r: 24, dmg: 13, angle: 35, bkb: 22, kbg: 92, sfx: 'heavy', fx: 'swoosh' }],
-    anim: [{ f: 6, hF: [-12, 108], lean: -12 }, { f: 10, hF: [64, 74], lean: 20 }, { f: 13, hF: [60, 50], lean: 22 }],
+    id: 'ftilt', total: 40,
+    hitboxes: [{ g: 0, from: 11, to: 14, at: 'blade', t: 1, r: 26, dmg: 14, angle: 35, bkb: 24, kbg: 92, sfx: 'heavy', fx: 'rock' }],
+    anim: [{ f: 6, w: 150, lean: -12 }, { f: 11, w: -20, lean: 20 }, { f: 15, w: -55, lean: 22 }],
   },
   utilt: {
     id: 'utilt', total: 38,
@@ -44,7 +45,7 @@ const moves: Record<string, MoveDef> = {
   dashAttack: {
     id: 'dashAttack', total: 46,
     motion: [{ from: 1, to: 10, vx: 6 }, { from: 11, to: 20, vx: 9 }, { from: 21, to: 38, damp: 0.85 }],
-    hitboxes: [{ g: 0, from: 11, to: 18, at: 'center', off: [24, 0], r: 38, dmg: 15, angle: 45, bkb: 55, kbg: 78, sfx: 'heavy', fx: 'shock' }],
+    hitboxes: [{ g: 0, from: 11, to: 18, at: 'center', off: [24, 0], r: 38, dmg: 15, angle: 45, bkb: 55, kbg: 78, sfx: 'heavy', fx: 'rock' }],
     anim: [
       { f: 8, lean: -10, hF: [-10, 82] },
       { f: 11, lean: 44, hip: [10, 42], hF: [46, 62], hB: [36, 52], fB: [-42, 10] },
@@ -52,22 +53,22 @@ const moves: Record<string, MoveDef> = {
     ],
   },
   fsmash: {
-    id: 'fsmash', total: 64, charge: { frame: 18, smash: true }, armor: { from: 1, to: 23, threshold: 10 },
-    hitboxes: [{ g: 0, from: 24, to: 26, at: 'handF', r: 30, dmg: 24, angle: 36, bkb: 32, kbg: 96, sfx: 'heavy', fx: 'shock', hitlag: 1.3 }],
+    id: 'fsmash', total: 66, charge: { frame: 18, smash: true }, armor: { from: 1, to: 23, threshold: 10 },
+    hitboxes: [{ g: 0, from: 24, to: 26, at: 'blade', t: 1, r: 32, dmg: 25, angle: 36, bkb: 32, kbg: 96, sfx: 'heavy', fx: 'rock', hitlag: 1.3 }],
     anim: [
-      { f: 10, hF: [-12, 132], hB: [-22, 128], lean: -20 },
-      { f: 18, hF: [-12, 132], hB: [-22, 128], lean: -20 },
-      { f: 24, hF: [72, 62], hB: [64, 56], lean: 32, hip: [12, 42] },
-      { f: 28, hF: [70, 58], hB: [62, 52], lean: 32, hip: [12, 42] },
+      { f: 10, w: 150, lean: -20 },
+      { f: 18, w: 150, lean: -20 },
+      { f: 24, w: -60, lean: 32, hip: [12, 42] },
+      { f: 30, w: -65, lean: 32, hip: [12, 42] },
     ],
   },
   usmash: {
-    id: 'usmash', total: 58, charge: { frame: 12, smash: true }, armor: { from: 1, to: 17, threshold: 10 },
-    hitboxes: [{ g: 0, from: 16, to: 20, at: 'head', off: [0, 16], r: 32, dmg: 20, angle: 90, bkb: 40, kbg: 92, sfx: 'heavy', fx: 'shock', hitlag: 1.2 }],
+    id: 'usmash', total: 60, charge: { frame: 12, smash: true }, armor: { from: 1, to: 17, threshold: 10 },
+    hitboxes: [{ g: 0, from: 16, to: 20, at: 'blade', t: 1, r: 32, dmg: 20, angle: 90, bkb: 40, kbg: 92, sfx: 'heavy', fx: 'rock', hitlag: 1.2 }],
     anim: [
-      { f: 12, hip: [0, 30], lean: 32, hF: [22, 62], hB: [-12, 52] },
-      { f: 16, hip: [0, 58], lean: -4, hF: [22, 124], hB: [-22, 124], fF: [12, 0], fB: [-12, 0] },
-      { f: 20, hip: [0, 56], lean: -4, hF: [22, 122], hB: [-22, 122] },
+      { f: 12, hip: [0, 30], lean: 32, w: -60 },
+      { f: 16, hip: [0, 58], lean: -4, w: 90 },
+      { f: 21, hip: [0, 56], lean: -8, w: 160 },
     ],
   },
   dsmash: {
@@ -95,9 +96,9 @@ const moves: Record<string, MoveDef> = {
     ],
   },
   fair: {
-    id: 'fair', total: 52, air: true, landingLag: 15,
-    hitboxes: [{ g: 0, from: 11, to: 14, at: 'handF', r: 26, dmg: 14, angle: 40, bkb: 32, kbg: 90, sfx: 'heavy', fx: 'swoosh' }],
-    anim: [{ f: 7, hF: [22, 132], lean: -8 }, { f: 11, hF: [66, 82], lean: 18 }, { f: 14, hF: [54, 42], lean: 24 }],
+    id: 'fair', total: 54, air: true, landingLag: 16,
+    hitboxes: [{ g: 0, from: 11, to: 14, at: 'blade', t: 1, r: 28, dmg: 16, angle: 40, bkb: 32, kbg: 90, sfx: 'heavy', fx: 'rock' }],
+    anim: [{ f: 7, w: 140, lean: -8 }, { f: 11, w: -20, lean: 18 }, { f: 15, w: -70, lean: 24 }],
   },
   bair: {
     id: 'bair', total: 48, air: true, landingLag: 13,
@@ -119,7 +120,7 @@ const moves: Record<string, MoveDef> = {
   },
   dair: {
     id: 'dair', total: 62, air: true, landingLag: 32,
-    hitboxes: [{ g: 0, from: 17, to: 21, at: 'footF', r: 26, dmg: 16, angle: 270, bkb: 32, kbg: 82, sfx: 'heavy', fx: 'shock' }],
+    hitboxes: [{ g: 0, from: 17, to: 21, at: 'footF', r: 26, dmg: 16, angle: 270, bkb: 32, kbg: 82, sfx: 'heavy', fx: 'rock' }],
     anim: [
       { f: 13, fF: [10, 42], lean: -6, hF: [32, 114], hB: [-32, 114] },
       { f: 17, fF: [8, -18], fB: [-10, 10], lean: 0, hF: [32, 114], hB: [-32, 114] },
@@ -142,7 +143,7 @@ const moves: Record<string, MoveDef> = {
   sspecial: {
     id: 'sspecial', total: 50, airOnce: true, armor: { from: 1, to: 20, threshold: 12 },
     motion: [{ from: 1, to: 20, vx: 9 }, { from: 21, to: 34, damp: 0.85 }],
-    hitboxes: [{ g: 0, from: 6, to: 20, at: 'center', off: [26, 0], r: 32, dmg: 14, angle: 40, bkb: 55, kbg: 68, sfx: 'heavy', fx: 'shock' }],
+    hitboxes: [{ g: 0, from: 6, to: 20, at: 'center', off: [26, 0], r: 32, dmg: 14, angle: 40, bkb: 55, kbg: 68, sfx: 'heavy', fx: 'rock' }],
     anim: [
       { f: 4, hip: [4, 46], lean: -24, hF: [-18, 64], hB: [-26, 56] },
       { f: 20, hip: [4, 46], lean: -24 },
@@ -156,7 +157,7 @@ const moves: Record<string, MoveDef> = {
       { from: 5, to: 20, vy: -9.4, noGrav: true, drift: 0.9 },
       { from: 21, to: 30, damp: 0.9, drift: 0.7 },
     ],
-    hitboxes: [{ g: 0, from: 4, to: 18, at: 'head', off: [0, 20], r: 30, dmg: 15, angle: 85, bkb: 40, kbg: 88, sfx: 'heavy', fx: 'shock' }],
+    hitboxes: [{ g: 0, from: 4, to: 18, at: 'head', off: [0, 20], r: 30, dmg: 15, angle: 85, bkb: 40, kbg: 88, sfx: 'heavy', fx: 'rock' }],
     hooks: { start: (f: Fighter) => leaveGround(f, -3) },
     anim: [
       { f: 3, hip: [0, 48], lean: -10, hF: [10, 64], hB: [-10, 60], fF: [16, 30], fB: [-16, 30] },
@@ -166,7 +167,7 @@ const moves: Record<string, MoveDef> = {
   },
   dspecial: {
     id: 'dspecial', total: 68, onLand: 'hook', edgeStop: false, armor: { from: 1, to: 68, threshold: 14 },
-    hitboxes: [{ g: 0, from: 15, to: 68, at: 'hip', off: [0, -24], r: 36, dmg: 16, angle: 270, bkb: 42, kbg: 72, sfx: 'heavy', fx: 'shock' }],
+    hitboxes: [{ g: 0, from: 15, to: 68, at: 'hip', off: [0, -24], r: 36, dmg: 16, angle: 270, bkb: 42, kbg: 72, sfx: 'heavy', fx: 'rock' }],
     hooks: {
       start(f: Fighter) {
         leaveGround(f, -10);
@@ -196,8 +197,8 @@ const moves: Record<string, MoveDef> = {
   dspecialLand: {
     id: 'dspecialLand', total: 36,
     hitboxes: [
-      { g: 0, from: 1, to: 3, pos: [66, 16], r: 42, dmg: 10, angle: 60, bkb: 58, kbg: 58, away: true, sfx: 'heavy', fx: 'shock' },
-      { g: 0, from: 1, to: 3, pos: [-66, 16], r: 42, dmg: 10, angle: 60, bkb: 58, kbg: 58, away: true, sfx: 'heavy', fx: 'shock' },
+      { g: 0, from: 1, to: 3, pos: [66, 16], r: 42, dmg: 10, angle: 60, bkb: 58, kbg: 58, away: true, sfx: 'heavy', fx: 'rock' },
+      { g: 0, from: 1, to: 3, pos: [-66, 16], r: 42, dmg: 10, angle: 60, bkb: 58, kbg: 58, away: true, sfx: 'heavy', fx: 'rock' },
     ],
     anim: [{ f: 0, hip: [0, 30], lean: 26, fF: [32, 0], fB: [-32, 0] }, { f: 14, hip: [0, 30], lean: 26, fF: [32, 0], fB: [-32, 0] }],
   },

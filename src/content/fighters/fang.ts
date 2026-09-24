@@ -2,10 +2,11 @@ import type { FighterDef, MoveDef, Rig } from '../../sim/defs';
 import type { Fighter } from '../../sim/fighter';
 import { commonMoves, grabMoves, leaveGround } from '../kit';
 
-/** FANG — wolf ninja. Kunai, shadow-step dash, smoke teleport, substitution counter. */
+/** FANG — wolf ninja with a katana. Kunai, shadow-step dash, smoke teleport, substitution counter. */
 const rig: Rig = {
   hipH: 38, torso: 27, headR: 13, arm1: 16, arm2: 15, leg1: 23, leg2: 22,
   bodyR: 10, limbR: 4.4, handR: 5.6, footR: 6.2,
+  weapon: { len: 58, width: 4 },
 };
 const W = 46;
 const H = 92;
@@ -23,9 +24,9 @@ const moves: Record<string, MoveDef> = {
     anim: [{ f: 2, fF: [30, 50], lean: -10 }, { f: 3, fF: [56, 56], lean: -20 }],
   },
   ftilt: {
-    id: 'ftilt', total: 20,
-    hitboxes: [{ g: 0, from: 5, to: 7, at: 'handF', r: 16, dmg: 8, angle: 34, bkb: 26, kbg: 80, sfx: 'slash', fx: 'swoosh' }],
-    anim: [{ f: 3, hF: [-10, 70], lean: -6 }, { f: 5, hF: [54, 48], lean: 16 }],
+    id: 'ftilt', total: 22,
+    hitboxes: [{ g: 0, from: 5, to: 7, at: 'blade', t: 0.85, r: 15, dmg: 9, angle: 34, bkb: 26, kbg: 80, sfx: 'slash', fx: 'slash' }],
+    anim: [{ f: 2, w: 110, lean: -6 }, { f: 5, w: -20, lean: 16 }, { f: 8, w: -55, lean: 16 }],
   },
   utilt: {
     id: 'utilt', total: 22,
@@ -40,16 +41,19 @@ const moves: Record<string, MoveDef> = {
   dashAttack: {
     id: 'dashAttack', total: 28,
     motion: [{ from: 1, to: 8, vx: 13 }, { from: 9, to: 18, damp: 0.82 }],
-    hitboxes: [{ g: 0, from: 5, to: 10, at: 'handF', r: 18, dmg: 8, angle: 40, bkb: 34, kbg: 64, sfx: 'slash', fx: 'swoosh' }],
-    anim: [{ f: 3, lean: 30, hF: [0, 50] }, { f: 5, lean: 34, hF: [56, 50] }],
+    hitboxes: [{ g: 0, from: 5, to: 10, at: 'blade', t: 0.85, r: 16, dmg: 9, angle: 40, bkb: 34, kbg: 64, sfx: 'slash', fx: 'slash' }],
+    anim: [{ f: 3, lean: 30, w: 150 }, { f: 5, lean: 34, w: -10 }, { f: 10, lean: 30, w: -45 }],
   },
   fsmash: {
-    id: 'fsmash', total: 42, charge: { frame: 9, smash: true },
+    id: 'fsmash', total: 44, charge: { frame: 9, smash: true },
     hitboxes: [
-      { g: 0, from: 11, to: 12, at: 'handF', r: 18, dmg: 5, angle: 30, bkb: 10, kbg: 10, fixed: 40, sfx: 'slash' },
-      { g: 1, from: 15, to: 17, at: 'handF', r: 22, dmg: 11, angle: 34, bkb: 32, kbg: 94, sfx: 'slash', fx: 'swoosh' },
+      { g: 0, from: 11, to: 12, at: 'blade', t: 0.8, r: 18, dmg: 5, angle: 30, bkb: 10, kbg: 10, fixed: 40, sfx: 'slash', fx: 'slash' },
+      { g: 1, from: 15, to: 17, at: 'blade', t: 0.95, r: 20, dmg: 13, angle: 34, bkb: 32, kbg: 94, sfx: 'tip', fx: 'slash' },
     ],
-    anim: [{ f: 5, hF: [-20, 70], lean: -14 }, { f: 11, hF: [60, 60], lean: 16 }, { f: 13, hF: [10, 70], lean: 4 }, { f: 15, hF: [62, 50], lean: 20 }],
+    anim: [
+      { f: 5, w: 160, lean: -14 }, { f: 9, w: 160, lean: -14 }, { f: 11, w: -10, lean: 16 },
+      { f: 13, w: 120, lean: 4 }, { f: 15, w: -30, lean: 22 }, { f: 18, w: -65, lean: 22 },
+    ],
   },
   usmash: {
     id: 'usmash', total: 40, charge: { frame: 7, smash: true },
@@ -71,8 +75,8 @@ const moves: Record<string, MoveDef> = {
   },
   fair: {
     id: 'fair', total: 28, air: true, landingLag: 8,
-    hitboxes: [{ g: 0, from: 5, to: 8, at: 'handF', r: 18, dmg: 9, angle: 40, bkb: 26, kbg: 80, sfx: 'slash', fx: 'swoosh' }],
-    anim: [{ f: 2, hF: [10, 80], lean: -8 }, { f: 5, hF: [56, 44], lean: 16 }],
+    hitboxes: [{ g: 0, from: 5, to: 8, at: 'blade', t: 0.9, r: 17, dmg: 10, angle: 40, bkb: 26, kbg: 80, sfx: 'slash', fx: 'slash' }],
+    anim: [{ f: 2, w: 120, lean: -8 }, { f: 5, w: -10, lean: 14 }, { f: 8, w: -65, lean: 14 }],
   },
   bair: {
     id: 'bair', total: 26, air: true, landingLag: 8,
@@ -81,8 +85,8 @@ const moves: Record<string, MoveDef> = {
   },
   uair: {
     id: 'uair', total: 26, air: true, landingLag: 7,
-    hitboxes: [{ g: 0, from: 4, to: 8, at: 'handF', r: 18, dmg: 7, angle: 88, bkb: 28, kbg: 78, sfx: 'slash' }],
-    anim: [{ f: 2, hF: [40, 70] }, { f: 4, hF: [10, 100] }, { f: 8, hF: [-30, 90] }],
+    hitboxes: [{ g: 0, from: 4, to: 8, at: 'blade', t: 0.9, r: 17, dmg: 8, angle: 88, bkb: 28, kbg: 78, sfx: 'slash', fx: 'slash' }],
+    anim: [{ f: 2, w: -30 }, { f: 4, w: 80 }, { f: 8, w: 175 }],
   },
   dair: {
     id: 'dair', total: 34, air: true, landingLag: 12,
@@ -102,7 +106,7 @@ const moves: Record<string, MoveDef> = {
   sspecial: {
     id: 'sspecial', total: 38, airOnce: true, intangible: [[3, 12]],
     motion: [{ from: 3, to: 12, vx: 18, noGrav: true, vy: 0 }, { from: 13, to: 24, damp: 0.78 }],
-    hitboxes: [{ g: 0, from: 4, to: 12, at: 'center', r: 26, dmg: 9, angle: 45, bkb: 40, kbg: 58, sfx: 'slash', fx: 'swoosh' }],
+    hitboxes: [{ g: 0, from: 4, to: 12, at: 'center', r: 26, dmg: 9, angle: 45, bkb: 40, kbg: 58, sfx: 'slash', fx: 'slash' }],
     anim: [{ f: 2, lean: 40, hF: [-30, 40], hB: [-40, 44] }, { f: 12, lean: 40, hF: [-30, 40] }, { f: 16, lean: 10, hF: [50, 50] }],
   },
   uspecial: {
@@ -122,14 +126,14 @@ const moves: Record<string, MoveDef> = {
   dspecialHit: {
     id: 'dspecialHit', total: 36, intangible: [[1, 16]],
     motion: [{ from: 1, to: 6, vx: 16, noGrav: true, vy: 0 }, { from: 7, to: 12, vx: 0, noGrav: true, vy: 0 }],
-    hitboxes: [{ g: 0, from: 8, to: 11, at: 'handF', r: 26, dmg: 8, dmgVar: 'counterDmg', angle: 40, bkb: 56, kbg: 70, sfx: 'slash', fx: 'swoosh', hitlag: 1.2 }],
+    hitboxes: [{ g: 0, from: 8, to: 11, at: 'blade', t: 0.9, r: 24, dmg: 8, dmgVar: 'counterDmg', angle: 40, bkb: 56, kbg: 70, sfx: 'tip', fx: 'slash', hitlag: 1.2 }],
     hooks: {
       frame(f: Fighter) {
         // dash through the attacker, then turn to strike from behind
         if (f.move!.frame === 7) f.facing = f.facing === 1 ? -1 : 1;
       },
     },
-    anim: [{ f: 3, lean: 10, hF: [-10, 60] }, { f: 8, lean: 22, hF: [60, 50] }, { f: 12, lean: 22, hF: [58, 44] }],
+    anim: [{ f: 3, lean: 10, w: 170 }, { f: 8, lean: 22, w: -20 }, { f: 12, lean: 22, w: -65 }],
   },
 };
 

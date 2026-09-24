@@ -1,5 +1,5 @@
 import { INK, mix } from '../color';
-import { add, bdir, bp, glowSlit, hp, line, mood, poly, shape, type Look, type LookCtx } from '../lookKit';
+import { add, bdir, bp, glowSlit, hp, line, mood, OUT, poly, shape, weaponFrame, type Look, type LookCtx } from '../lookKit';
 import type { V2 } from '../../sim/math';
 
 /** TALUS — a walking cliff. Slab torso with glowing magma cracks, boulder head, crystal back. */
@@ -88,12 +88,25 @@ export const TALUS_LOOK: Look = {
     if (mood(c).hurt) line(ctx, [hp(c, 0.45, -0.5), hp(c, 0.9, -0.45)], 3, INK);
   },
   held(ctx, c) {
-    // knuckle ridge on the front fist
-    const { P, r } = c;
-    const d = { x: P.hdF.x - P.elF.x, y: P.hdF.y - P.elF.y };
-    const l = Math.hypot(d.x, d.y) || 1;
-    const perp = { x: -d.y / l, y: d.x / l };
-    const k = add(P.hdF, { x: d.x / l, y: d.y / l }, r.handR * 0.55);
-    line(ctx, [add(k, perp, r.handR * 0.6), add(k, perp, -r.handR * 0.6)], 2.5, mix(c.pal.main, INK, 0.4));
+    const w = weaponFrame(c);
+    if (!w) return;
+    const { d, n, base, tip } = w;
+    const butt = add(base, d, -12);
+    const neck = add(tip, d, -10);
+    line(ctx, [butt, neck], 7 + OUT * 1.4, INK);
+    line(ctx, [butt, neck], 7, '#5a4a3a');
+    line(ctx, [add(base, d, -8), add(base, d, -3)], 9, mix(c.pal.dark, INK, 0.2));
+    // hammer head: a stone block across the haft
+    const hd = 15;
+    const hw = 25;
+    const ctr = add(tip, d, -4);
+    const head = [add(add(ctr, d, -hd), n, hw), add(add(ctr, d, hd), n, hw), add(add(ctr, d, hd), n, -hw), add(add(ctr, d, -hd), n, -hw)];
+    poly(ctx, head, mix(c.pal.main, '#ffffff', 0.08), true);
+    line(ctx, [head[0], head[1]], 3.5, mix(c.pal.main, '#ffffff', 0.35));
+    for (const k of [-1, 1]) line(ctx, [add(add(ctr, d, -hd), n, k * hw * 0.55), add(add(ctr, d, hd), n, k * hw * 0.55)], 3, mix(c.pal.dark, INK, 0.3));
+    const g = glow(c);
+    const crack = [add(add(ctr, d, -6), n, 8), add(add(ctr, d, 1), n, 2), add(add(ctr, d, -3), n, -4), add(add(ctr, d, 6), n, -10)];
+    line(ctx, crack, 4.5, mix(c.pal.dark, INK, 0.4));
+    line(ctx, crack, 2.2, g);
   },
 };

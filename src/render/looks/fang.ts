@@ -1,5 +1,5 @@
 import { INK, mix } from '../color';
-import { add, band, bdir, bp, cartoonEyes, disc, hp, line, mood, OUT, poly, shape, type Look, type LookCtx } from '../lookKit';
+import { add, band, bdir, bp, cartoonEyes, disc, hp, line, mood, OUT, poly, shape, weaponFrame, type Look, type LookCtx } from '../lookKit';
 import type { V2 } from '../../sim/math';
 
 /** FANG — wolf ninja. Snout, pointed ears, headband tails, bushy tail, wrapped gi. */
@@ -76,5 +76,36 @@ export const FANG_LOOK: Look = {
     line(ctx, [hp(c, 0.8, -0.5), hp(c, 1.45, -0.45)], 1.5, INK);
     poly(ctx, [hp(c, 1.2, -0.46), hp(c, 1.26, -0.62), hp(c, 1.32, -0.46)], '#ffffff', false);
   },
+  held(ctx, c) {
+    const w = weaponFrame(c);
+    if (!w) return;
+    const { d, n, base, tip } = w;
+    // wrapped hilt
+    const pommel = add(base, d, -15);
+    line(ctx, [pommel, add(base, d, 3)], 5 + OUT * 1.4, INK);
+    line(ctx, [pommel, add(base, d, 3)], 5, c.pal.dark);
+    for (let k = 0; k < 3; k++) {
+      const p = add(base, d, -12 + k * 5);
+      line(ctx, [add(p, n, 2.5), add(add(p, d, 2.5), n, -2.5)], 1.4, c.pal.accent);
+    }
+    // curved blade: spine bows toward n
+    const bs = add(base, d, 5);
+    const len = Math.hypot(tip.x - bs.x, tip.y - bs.y);
+    const spine: V2[] = [];
+    const edge: V2[] = [];
+    for (let k = 0; k <= 8; k++) {
+      const s = k / 8;
+      const bow = Math.sin(s * Math.PI * 0.5) * 5 * s;
+      const p = add(add(bs, d, len * s), n, bow);
+      spine.push(add(p, n, 2.6 * (1 - s * 0.7)));
+      edge.push(add(p, n, -2.6 * (1 - s * 0.7)));
+    }
+    const blade = [...spine, ...edge.reverse()];
+    poly(ctx, blade, '#e6ecf5', true);
+    line(ctx, spine.slice(1, 7), 1.4, '#ffffff');
+    line(ctx, [add(bs, n, -1.2), add(add(bs, d, len * 0.8), n, 2)], 1, '#9fb3d8');
+    // tsuba
+    line(ctx, [add(bs, n, 6), add(bs, n, -6)], 4.5 + OUT, INK);
+    line(ctx, [add(bs, n, 6), add(bs, n, -6)], 4.5, '#d8a83a');
+  },
 };
-

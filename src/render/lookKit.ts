@@ -189,3 +189,11 @@ export function glowSlit(ctx: CanvasRenderingContext2D, c: LookCtx, a: V2, b: V2
 export function wob(t: number, k: number): number {
   return Math.sin(t * 0.9 + k * 2.3) * 0.6 + Math.sin(t * 1.7 + k * 5.1) * 0.4;
 }
+
+/** Weapon axis from the pose: grip at the front hand, tip `len` along the weapon angle. */
+export function weaponFrame(c: LookCtx): { d: V2; n: V2; base: V2; tip: V2 } | null {
+  if ((c.r.weapon?.len ?? 0) <= 0) return null;
+  const a = (c.P.w * Math.PI) / 180;
+  const d = { x: Math.cos(a), y: Math.sin(a) };
+  return { d, n: { x: -d.y, y: d.x }, base: c.P.wBase, tip: c.P.wTip };
+}

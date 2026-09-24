@@ -23,6 +23,9 @@ export interface AnimKey {
 
 export type Sfx = 'punch' | 'kick' | 'slash' | 'heavy' | 'fire' | 'spark' | 'zap' | 'blunt' | 'boom' | 'tip';
 
+/** Visual element of a hit: drives swoosh colour and impact effects (render-only). */
+export type HitFx = 'swoosh' | 'fire' | 'spark' | 'shock' | 'none' | 'slash' | 'water' | 'soul' | 'rock';
+
 export interface HitData {
   dmg: number;
   /** Launch angle in degrees relative to the attacker's facing (0 = forward, 90 = up, 270 = down). */
@@ -38,6 +41,7 @@ export interface HitData {
   radial?: boolean;
   /** Horizontal launch direction decided by which side of the attacker the victim is on. */
   away?: boolean;
+  fx?: HitFx;
 }
 
 export interface HitboxDef extends HitData {
@@ -55,7 +59,6 @@ export interface HitboxDef extends HitData {
   dmgVar?: string;
   /** Linear scaling with charge fraction for charged specials. */
   charge?: { dmg?: [number, number]; bkb?: [number, number]; kbg?: [number, number]; shieldDmg?: [number, number] };
-  fx?: 'swoosh' | 'fire' | 'spark' | 'shock' | 'none';
 }
 
 export interface GrabBoxDef {

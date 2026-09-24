@@ -51,6 +51,11 @@ export class MatchRenderer {
       const sp = Math.hypot(f.kbx, f.kby);
       if (f.state === 'tumble' && sp > 7 && this.t % 2 === 0) this.particles.smoke(f.cx, f.cy, sp > 20);
       if (f.move && f.move.charging && this.t % 5 === 0) this.particles.sparkle(f.cx, f.cy, '#fff6a0', 1);
+      // weapon glint builds while a smash charges
+      if (f.move && f.move.charging && f.def.rig.weapon && this.t % 4 === 0) {
+        const tip = f.pose.wTip;
+        this.particles.add({ kind: 'star', x: f.x + tip.x * f.facing, y: f.y - tip.y, life: 12, size: 18 + Math.min(30, f.move.frame * 0.6), color: '#ffffff', rot: this.t * 0.1, vr: 0.12 });
+      }
       if (f.state === 'move' && f.move?.id === 'uspecial' && f.def.id === 'zip' && this.t % 2 === 0) this.particles.smoke(f.cx, f.cy, true);
     }
     for (let i = 0; i < m.fighters.length; i++) {
@@ -69,7 +74,7 @@ export class MatchRenderer {
     const P = this.particles;
     switch (e.t) {
       case 'hit':
-        P.hitSpark(e.x, e.y, e.dmg, e.kb, e.blocked, e.sfx);
+        P.hitSpark(e.x, e.y, e.dmg, e.kb, e.blocked, e.sfx, e.fx, e.ang);
         if (!e.blocked) this.cam.punch(Math.min(24, e.kb * 0.08 + e.dmg * 0.25));
         break;
       case 'ko': {

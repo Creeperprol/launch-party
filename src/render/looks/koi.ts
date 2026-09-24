@@ -1,5 +1,5 @@
 import { INK, mix } from '../color';
-import { add, bdir, bp, cartoonEyes, disc, hp, line, mood, OUT, poly, shape, type Look, type LookCtx } from '../lookKit';
+import { add, bdir, bp, cartoonEyes, disc, hp, line, mood, OUT, poly, shape, weaponFrame, type Look, type LookCtx } from '../lookKit';
 import type { V2 } from '../../sim/math';
 
 /** KOI — tide dancer. Fin-like flowing hair with koi spots, scaled leotard, tail fins, water ribbon. */
@@ -77,6 +77,29 @@ export const KOI_LOOK: Look = {
     }
   },
   held(ctx, c) {
+    const w = weaponFrame(c);
+    if (w) {
+      const { d, n, base, tip } = w;
+      const shaftEnd = add(tip, d, -16);
+      const butt = add(base, d, -18);
+      line(ctx, [butt, shaftEnd], 4 + OUT * 1.4, INK);
+      line(ctx, [butt, shaftEnd], 4, '#e8a86a');
+      line(ctx, [add(base, d, -3), add(base, d, 3)], 5.5, c.pal.accent);
+      const cross = add(tip, d, -14);
+      const steel = '#bfeef6';
+      // three prongs with barbed tips
+      const prongs: [number, number][] = [[-8, 12], [0, 16], [8, 12]];
+      line(ctx, [add(cross, n, -9), add(cross, n, 9)], 4 + OUT, INK);
+      for (const [o, l] of prongs) line(ctx, [add(cross, n, o), add(add(cross, n, o), d, l)], 3.4 + OUT, INK);
+      line(ctx, [add(cross, n, -9), add(cross, n, 9)], 4, steel);
+      for (const [o, l] of prongs) {
+        const a = add(cross, n, o);
+        const b = add(a, d, l);
+        line(ctx, [a, b], 3.4, steel);
+        poly(ctx, [add(b, n, 3), add(b, d, 5), add(b, n, -3)], steel, false);
+      }
+      disc(ctx, cross, 3.2, c.pal.accent);
+    }
     if (c.f.state !== 'move') return;
     const h = c.P.hdF;
     ctx.save();

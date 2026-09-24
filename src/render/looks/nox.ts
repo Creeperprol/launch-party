@@ -1,5 +1,5 @@
 import { INK, mix } from '../color';
-import { add, bp, disc, hp, line, mood, poly, shape, type Look, type LookCtx } from '../lookKit';
+import { add, bp, disc, hp, line, mood, OUT, poly, shape, weaponFrame, type Look, type LookCtx } from '../lookKit';
 import type { V2 } from '../../sim/math';
 
 /** NOX — lantern specter. Tattered hooded cloak, void face with glowing eyes, hanging lantern. */
@@ -25,6 +25,21 @@ function hood(c: LookCtx): V2[] {
   return [[1.05, 0.55], [0.6, 1.2], [-0.4, 1.3], [-1.55 + sw, 1.1 + sw], [-1.2, 0.3], [-1.15, -0.7], [-0.2, -1.15], [0.9, -0.7]].map(([u, v]) => hp(c, u * 1.1, v * 1.1));
 }
 
+function lantern(ctx: CanvasRenderingContext2D, c: LookCtx, h: V2): void {
+  const body = { x: h.x, y: h.y - 14 };
+  line(ctx, [h, { x: h.x, y: h.y - 4 }], 2, INK);
+  const glow = 0.22 + 0.1 * Math.sin(c.t * 0.12);
+  ctx.save();
+  ctx.globalAlpha *= glow;
+  disc(ctx, body, 14, c.pal.accent);
+  ctx.restore();
+  const frame = [add(body, { x: -6, y: 8 }), add(body, { x: 6, y: 8 }), add(body, { x: 7, y: -8 }), add(body, { x: -7, y: -8 })];
+  poly(ctx, frame, mix(c.pal.accent, '#ffffff', 0.55), true);
+  line(ctx, [add(body, { x: -8, y: 8 }), add(body, { x: 8, y: 8 })], 3.5, INK);
+  line(ctx, [add(body, { x: -9, y: -8 }), add(body, { x: 9, y: -8 })], 3.5, INK);
+  disc(ctx, body, 3 + Math.sin(c.t * 0.4), '#ffffff');
+}
+
 export const NOX_LOOK: Look = {
   arm: (c) => c.pal.main,
   leg: (c) => mix(c.pal.dark, INK, 0.3),
@@ -32,6 +47,7 @@ export const NOX_LOOK: Look = {
   foot: (c) => mix(c.pal.dark, INK, 0.45),
   behind(ctx, c, outline) {
     shape(ctx, cloak(c), mix(c.pal.main, INK, 0.12), outline);
+    if (!outline) lantern(ctx, c, c.P.hdB);
   },
   torso(ctx, c) {
     const { P, r, pal } = c;
@@ -75,19 +91,27 @@ export const NOX_LOOK: Look = {
     }
   },
   held(ctx, c) {
-    const h = c.P.hdF;
-    const top = { x: h.x, y: h.y - 4 };
-    const body = { x: h.x, y: h.y - 16 };
-    line(ctx, [h, top], 2, INK);
-    const glow = 0.22 + 0.1 * Math.sin(c.t * 0.12);
+    const w = weaponFrame(c);
+    if (!w) return;
+    const { d, n, base, tip } = w;
+    const butt = add(base, d, -18);
+    line(ctx, [butt, tip], 4.5 + OUT * 1.4, INK);
+    line(ctx, [butt, tip], 4.5, '#3a2438');
+    line(ctx, [add(base, d, -4), add(base, d, 3)], 6, c.pal.light);
+    // crescent blade hooks back from the tip on the -n side
+    const down = { x: -n.x, y: -n.y };
+    const blade = [
+      add(tip, down, -3), add(add(tip, d, -12), down, 13), add(add(tip, d, -30), down, 20), add(add(tip, d, -46), down, 15),
+      add(add(tip, d, -30), down, 12), add(add(tip, d, -14), down, 6), add(tip, down, 4),
+    ];
+    const glow = 0.35 + 0.2 * Math.sin(c.t * 0.12);
     ctx.save();
     ctx.globalAlpha *= glow;
-    disc(ctx, body, 16, c.pal.accent);
+    line(ctx, blade.slice(0, 4), 9, c.pal.accent);
     ctx.restore();
-    const frame = [add(body, { x: -7, y: 9 }), add(body, { x: 7, y: 9 }), add(body, { x: 8, y: -9 }), add(body, { x: -8, y: -9 })];
-    poly(ctx, frame, mix(c.pal.accent, '#ffffff', 0.55), true);
-    line(ctx, [add(body, { x: -9, y: 9 }), add(body, { x: 9, y: 9 })], 4, INK);
-    line(ctx, [add(body, { x: -10, y: -9 }), add(body, { x: 10, y: -9 })], 4, INK);
-    disc(ctx, body, 3.6 + Math.sin(c.t * 0.4), '#ffffff');
+    poly(ctx, blade, '#dfe6ef', true);
+    line(ctx, blade.slice(0, 4), 1.8, mix(c.pal.accent, '#ffffff', 0.4));
+    disc(ctx, tip, 4 + OUT * 0.6, INK);
+    disc(ctx, tip, 4, c.pal.accent);
   },
 };

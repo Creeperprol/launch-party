@@ -4,7 +4,7 @@ import { posePoint } from '../sim/pose';
 import { rgba } from './color';
 
 /** Render-only particles. Randomness here is cosmetic and never touches the simulation. */
-type Kind = 'spark' | 'ring' | 'dust' | 'smoke' | 'star' | 'shard' | 'flame' | 'plus' | 'beam' | 'glow' | 'streak';
+type Kind = 'spark' | 'ring' | 'dust' | 'smoke' | 'star' | 'shard' | 'flame' | 'plus' | 'beam' | 'glow' | 'streak' | 'crescent' | 'drop';
 
 interface Particle {
   kind: Kind;
@@ -38,12 +38,20 @@ export class Particles {
     q.max = q.life;
   }
 
-  hitSpark(x: number, y: number, dmg: number, kb: number, blocked: boolean, sfx: string): void {
+  /** `ang` is the launch angle in degrees (y-up), used to throw debris the way the victim flies. */
+  hitSpark(x: number, y: number, dmg: number, kb: number, blocked: boolean, sfx: string, fx?: string, ang?: number): void {
     const big = Math.min(1, dmg / 18);
-    const color = blocked ? '#9fd6ff' : sfx === 'fire' ? '#ff9a3a' : sfx === 'spark' || sfx === 'zap' ? '#7ff5ff' : sfx === 'slash' || sfx === 'tip' ? '#e8f0ff' : '#fff1a8';
+    const el = blocked ? undefined : fx;
+    const color = blocked
+      ? '#9fd6ff'
+      : el && ELEMENT_COLOR[el]
+        ? ELEMENT_COLOR[el]
+        : sfx === 'fire' ? '#ff9a3a' : sfx === 'spark' || sfx === 'zap' ? '#7ff5ff' : sfx === 'slash' || sfx === 'tip' ? '#e8f0ff' : '#fff1a8';
     const n = blocked ? 6 : 6 + Math.round(big * 8);
+    const dir = ang === undefined ? null : (ang * Math.PI) / 180;
     for (let i = 0; i < n; i++) {
-      const a = rand(0, Math.PI * 2);
+      // half the streaks follow the launch direction so impacts read as directional
+      const a = dir !== null && i % 2 === 0 ? -dir + rand(-0.7, 0.7) : rand(0, Math.PI * 2);
       const s = rand(6, 14) * (0.6 + big);
       this.add({ kind: 'streak', x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: rand(8, 14), size: 3 + big * 3, len: 16 + big * 26, color, drag: 0.8 });
     }
@@ -51,6 +59,41 @@ export class Particles {
     this.add({ kind: 'star', x, y, life: 9, size: 26 + big * 46 + Math.min(40, kb * 0.15), color, rot: rand(0, Math.PI), vr: 0.08 });
     if (sfx === 'tip') this.add({ kind: 'star', x, y, life: 14, size: 60 + big * 50, color: '#bfe6ff', rot: 0.4, vr: -0.05 });
     if (sfx === 'fire') for (let i = 0; i < 8; i++) this.add({ kind: 'flame', x, y, vx: rand(-4, 4), vy: rand(-6, -1), life: rand(14, 24), size: rand(8, 16), color: '#ff7a2a', drag: 0.9 });
+    switch (el) {
+      case 'slash': {
+        const rot = dir !== null ? -dir : rand(-0.6, 0.6);
+        this.add({ kind: 'crescent', x, y, life: 12, size: 44 + big * 50, color: '#ffffff', rot });
+        this.add({ kind: 'crescent', x, y, life: 9, size: 34 + big * 40, color: '#ff4a6a', rot: rot + 0.5 });
+        break;
+      }
+      case 'water': {
+        for (let i = 0; i < 12 + big * 10; i++) {
+          const a = rand(-Math.PI * 0.95, -Math.PI * 0.05);
+          const sp = rand(4, 11) * (0.7 + big);
+          this.add({ kind: 'drop', x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: rand(18, 30), size: rand(3, 6), color: i % 3 ? '#7fdcff' : '#e6fbff', grav: 0.55, drag: 0.97 });
+        }
+        this.add({ kind: 'ring', x, y, life: 18, size: 50 + big * 50, color: '#7fdcff' });
+        break;
+      }
+      case 'soul': {
+        for (let i = 0; i < 6 + big * 6; i++) {
+          this.add({ kind: 'glow', x: x + rand(-18, 18), y: y + rand(-14, 14), vx: rand(-1, 1), vy: rand(-3.5, -1.5), life: rand(22, 36), size: rand(10, 18), color: i % 2 ? '#8affd0' : '#c8b8ff', drag: 0.96 });
+        }
+        this.add({ kind: 'ring', x, y, life: 16, size: 46 + big * 40, color: '#8affd0' });
+        break;
+      }
+      case 'rock': {
+        for (let i = 0; i < 8 + big * 10; i++) {
+          const a = rand(0, Math.PI * 2);
+          const sp = rand(4, 12) * (0.6 + big);
+          this.add({ kind: 'shard', x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 4, life: rand(22, 36), size: rand(5, 11), color: i % 2 ? '#8a8478' : '#c9a878', rot: rand(0, 6), vr: rand(-0.3, 0.3), grav: 0.6, drag: 0.97 });
+        }
+        this.dust(x, y + 10, 5, '#c9b89a', 1.4);
+        break;
+      }
+      default:
+        break;
+    }
   }
 
   dust(x: number, y: number, n: number, color = '#e8dcc8', spread = 1): void {
@@ -186,6 +229,28 @@ export class Particles {
           ctx.fill();
           break;
         }
+        case 'crescent': {
+          const grow = 1 - k;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot);
+          ctx.strokeStyle = rgba(p.color, Math.min(1, k * 1.4));
+          ctx.lineCap = 'round';
+          ctx.lineWidth = 2 + 9 * k;
+          ctx.beginPath();
+          ctx.arc(0, 0, p.size * (0.7 + grow * 0.5), -1.2, 1.2);
+          ctx.stroke();
+          ctx.restore();
+          break;
+        }
+        case 'drop': {
+          const sp = Math.hypot(p.vx, p.vy) || 1;
+          ctx.fillStyle = rgba(p.color, Math.min(1, k * 1.3));
+          ctx.beginPath();
+          ctx.ellipse(p.x, p.y, p.size, p.size * (1 + Math.min(1.2, sp * 0.12)), Math.atan2(p.vy, p.vx) + Math.PI / 2, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        }
         case 'beam': {
           ctx.save();
           ctx.translate(p.x, p.y);
@@ -210,6 +275,16 @@ export class Particles {
     }
   }
 }
+
+/** Impact and trail colour per hit element. */
+export const ELEMENT_COLOR: Record<string, string> = {
+  fire: '#ffb04a',
+  spark: '#8ff6ff',
+  slash: '#ffffff',
+  water: '#7fdcff',
+  soul: '#8affd0',
+  rock: '#e0c090',
+};
 
 export function star(ctx: CanvasRenderingContext2D, x: number, y: number, R: number, r: number, rot: number, n: number): void {
   ctx.beginPath();
@@ -307,7 +382,7 @@ export class Swooshes {
         if (age > 6) continue;
         const a = 1 - age / 7;
         const fx = tr.fx.get(k) ?? 'swoosh';
-        const col = fx === 'fire' ? '#ffb04a' : fx === 'spark' ? '#8ff6ff' : '#ffffff';
+        const col = ELEMENT_COLOR[fx] ?? '#ffffff';
         if (k === 'blade') {
           ctx.fillStyle = rgba(col, 0.42 * a);
           ctx.beginPath();

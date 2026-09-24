@@ -432,7 +432,7 @@ export class Match {
       v.enterHitstun(kb, ang * DEG, hl, this);
       this.checkFinalHit(v);
     }
-    this.emit({ t: 'hit', x: fxX, y: fxY, dmg: d, kb, attacker: owner, victim: v.idx, sfx: h.sfx ?? 'punch', blocked: false });
+    this.emit({ t: 'hit', x: fxX, y: fxY, dmg: d, kb, attacker: owner, victim: v.idx, sfx: h.sfx ?? 'punch', blocked: false, fx: h.fx, ang });
   }
 
   credit(owner: number, v: Fighter, d: number): void {

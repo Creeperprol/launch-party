@@ -1,8 +1,8 @@
-import type { Sfx } from './defs';
+import type { HitFx, Sfx } from './defs';
 
 /** Events emitted by the simulation for rendering and audio. The sim never reads them back. */
 export type SimEvent =
-  | { t: 'hit'; x: number; y: number; dmg: number; kb: number; attacker: number; victim: number; sfx: Sfx; blocked: boolean }
+  | { t: 'hit'; x: number; y: number; dmg: number; kb: number; attacker: number; victim: number; sfx: Sfx; blocked: boolean; fx?: HitFx; ang?: number }
   | { t: 'ko'; x: number; y: number; victim: number; angle: number; credit: number }
   | { t: 'jump'; x: number; y: number; who: number; air: boolean }
   | { t: 'land'; x: number; y: number; who: number; hard: boolean }
